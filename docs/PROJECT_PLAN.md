@@ -13,7 +13,7 @@ There are two repos:
 
 - Name: **BugTrail** (`bugtrail-api`, `bugtrail-web`).
 - Database: MongoDB only. **No Docker, no Redis.**
-- Roles: **Admin is the top role** (no Super Admin). Roles and permissions are stored in the DB, and access is scoped to project membership.
+- Roles: **Admin is the top role** (no Super Admin). Access is scoped to project membership. _(Changed 2026-10-09 in the API: roles are a fixed enum on the user (admin, project_manager, developer, qa) and their permissions are defined in code; there is no Role collection. See bugtrail-api `docs/PROJECT_PLAN.md` §2.)_
 - Seeded roles: Admin, Project Manager, Developer, QA.
 - Accounts: self-register, then Admin approval.
 - Ticket statuses: **Reported → Ongoing → Resolved → Pass / Failed**.
@@ -183,7 +183,7 @@ Reported → Ongoing → Resolved ──QA──► Pass
 | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | auth          | register, login, logout, refresh-tokens, forgot/reset-password, me                                                                                                                                                                                                    |
 | users         | list, get, create, update, delete, `PATCH /:id/status` (approve/reject/suspend), `PATCH /me`                                                                                                                                                                          |
-| roles         | CRUD, `GET /roles/permissions` (catalog)                                                                                                                                                                                                                              |
+| roles         | `GET /roles`: read-only catalog of the four roles and their permissions (no CRUD since 2026-10-09)                                                                                                                                                                    |
 | projects      | `GET /projects` (each project includes a status summary for its pie chart), get, create, update, delete, `POST/DELETE /:id/members`, `GET /:id/modules` (distinct module names, for autocomplete)                                                                     |
 | bugs          | `GET /bugs?projectId=` (filters: status, assignee, module, search; sort: age, failCount, updatedAt; paginated), get by id/key, create, update, delete (soft), `PATCH /:id/status` `{to, sendEmail}`, `PATCH /:id/assign` `{assignee, sendEmail}`, `GET /:id/activity` |
 | messages      | `GET/POST /bugs/:id/messages`, `PATCH/DELETE /messages/:id`                                                                                                                                                                                                           |
@@ -212,7 +212,8 @@ Reported → Ongoing → Resolved ──QA──► Pass
 - TanStack Query (server data) and TanStack Table (ticket grid)
 - react-hook-form + zod (forms)
 - axios, Recharts, socket.io-client
-- sonner (toasts), lucide-react (icons), next-themes (dark mode)
+- sonner (toasts), lucide-react (icons), Radix primitives (`radix-ui`) styled in-house
+- _(2026-10-12)_ Dark mode without next-themes: a small inline `<head>` script (the pattern in Next 16's "preventing flash" guide) sets `data-theme` before paint, and `useThemePreference` handles the toggle. shadcn components are written by hand in the shadcn style, because the CLI's `init` rewrites `globals.css` with its own colour system.
 
 ### Screens & flow
 
@@ -238,7 +239,7 @@ Reported → Ongoing → Resolved ──QA──► Pass
 - **Bug detail (`/projects/[projectId]/bugs/[bugKey]`)**, in two columns:
   - **Left:** title, key, module, description, attachment links, status control (only allowed statuses, plus the "Send email" checkbox), assignee, fail count, age, time per status, activity timeline.
   - **Right: chat panel.** Realtime messages, load older messages on scroll, @mentions, edit/delete your own messages.
-- Users (with a pending-approval tab), Roles (permission matrix with checkboxes), Notifications, Profile.
+- Users (with a pending-approval tab), Roles (read-only: what each of the four roles can do, from `GET /roles`), Notifications, Profile.
 
 ### Structure
 
@@ -247,7 +248,7 @@ src/
   app/(auth)/        login, register, forgot-password, reset-password, pending-approval
   app/(panel)/       layout.tsx (sidebar + topbar + auth guard)
     dashboard/  projects/  projects/[projectId]/  projects/[projectId]/bugs/[bugKey]/
-    users/  roles/  roles/[roleId]/  notifications/  profile/
+    users/  roles/  notifications/  profile/
   components/ui/       shadcn primitives
   components/layout/   Sidebar, Topbar, NotificationBell, PageHeader
   components/shared/   DataTable, StatusBadge, PieSummary, EmptyState, ConfirmDialog
@@ -274,7 +275,7 @@ We follow the four principles from Katie Dill's (Stripe) talk. The goal is a pan
 
 **2. Encode the standards (an "opinionated harness").**
 
-- `src/styles/tokens.css` holds the design tokens: colour roles, the type scale, spacing, radii, motion, and status colours. Each status has a **colour + glyph** pair, so status is never shown by colour alone. Tailwind's theme maps only to these tokens.
+- `src/app/globals.css` holds the design tokens (decided 2026-10-12: one file, since Tailwind 4 is configured in CSS): colour roles, the type scale, radii, shadows, and status colours. Each status has a **colour + glyph** pair, so status is never shown by colour alone. Tailwind's theme maps only to these tokens.
 - shadcn components are **restyled to our tokens**, not shipped with the stock look.
 - **Page templates, not just components:** `ListPage` (header, filters, table, empty/loading/error states), `DetailPage` (main + side panel), `FormDialog`, `ProjectCard`. New screens are built from templates, so the whole app stays coherent.
 - `docs/design/DESIGN_SYSTEM.md` sets out the rules with do/don't examples. A frontend `CLAUDE.md` points AI-assisted work at those rules.
@@ -296,7 +297,7 @@ We follow the four principles from Katie Dill's (Stripe) talk. The goal is a pan
 - **Keyboard-first:** `j`/`k` to move through the grid, `Enter` to open, `c` to report a bug, and `⌘K` for a command palette to jump to any project or ticket.
 - **Project cards:** the pie is shown as a precise ring with the open count in the centre and an exact legend, and the trouble signal (failed or ageing tickets) gets the only accent colour on the card.
 
-**Process:** Phase 7 starts with a **style tile** (type pair, palette, status glyphs, one project card, one ticket row, one Trail) built as a single page for your approval. We only build screens after the direction is agreed. I'll use the `frontend-design` skill for this step.
+**Process:** Phase 7 starts with a **style tile** (type pair, palette, status glyphs, one project card, one ticket row, one Trail) built as a single page for your approval. We only build screens after the direction is agreed. _(Approved 2026-10-12; the living reference is the dev-only `/design` route.)_
 
 ---
 
