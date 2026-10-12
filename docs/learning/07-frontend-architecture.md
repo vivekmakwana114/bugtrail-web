@@ -160,3 +160,25 @@ Three cases, decided in one `useLayoutEffect` after each render, before the brow
 ### 27. Screen readers and live lists
 
 `aria-live` on the whole message list would read 30 messages aloud every time older ones load. Instead a visually hidden `role="status"` line holds only the newest message from someone else, so the announcement is exactly "New message from Riya Shah: …". (It also tripped a test: the same text existed twice on the page. Scope test selectors to the region you mean.)
+
+## Added with the dashboard
+
+### 28. Query keys must be stable; round time to the day
+
+"Last 7 days" as `now − 7×24h` changes every millisecond, so each render would build a new query key and fire a new request, forever. `rangeStart()` rounds to local midnight, which is also what people mean by "the last 7 days": today and the six before it. Sending a full ISO date-time (with the user's offset baked in) also sidesteps the API's rule that date-only values are UTC days.
+
+### 29. Five bars don't need a chart library
+
+Bugs by status is five numbers. Plain `div`s scaled to the largest count, in the status colour tokens, give the same picture with no dependency, full theme support (dark mode included) and real text a screen reader can read ("Failed 1 (13%)"). Reach for a chart library when you need axes, time series or interaction.
+
+### 30. Grid items don't shrink below their content by default
+
+On a phone the page scrolled sideways by 492px even though every table sits in an `overflow-x-auto` frame. Grid and flex items default to `min-width: auto`, so the section around a 720px-wide table grew to 720px instead of letting the table scroll inside it. `min-w-0` on the section (and its content wrapper) restores the expected behaviour. When something overflows, look up the tree for the first grid/flex item without `min-w-0`.
+
+### 31. Test against the API, not against remembered numbers
+
+The dashboard test doesn't hard-code "5 open bugs". For each view it asks the API the same question (`/dashboard/summary?from=…`) and compares. Seed data can change and the test still means something: "the screen shows what the server says".
+
+### 32. Lay out by what each block is for
+
+The first layout put Longest-running tickets in the narrow right column, and Age, the column the block exists for, was clipped. Compact blocks (status bars, developer numbers) share a row; the list that needs width gets the full width. A layout is right when nothing important needs a sideways scroll at common widths.

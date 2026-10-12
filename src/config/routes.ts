@@ -6,6 +6,7 @@ export const routes = {
   forgotPassword: '/forgot-password',
   resetPassword: '/reset-password',
   pendingApproval: '/pending-approval',
+  dashboard: '/dashboard',
   projects: '/projects',
   project: (projectId: string) => `/projects/${projectId}`,
   bug: (projectId: string, bugKey: string) => `/projects/${projectId}/bugs/${bugKey}`,
