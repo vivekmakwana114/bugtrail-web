@@ -1,17 +1,13 @@
 import Link from 'next/link';
 import type { ProjectListItem } from '@/types/api';
 import { TROUBLE_AGE_DAYS } from '@/config/statuses';
-import { formatCount } from '@/lib/format';
+import { formatCount, formatRelative } from '@/lib/format';
 import { StatusGlyph } from './status-glyph';
 import { StatusRing } from './status-ring';
 
 type ProjectCardProps = {
   project: ProjectListItem;
   href: string;
-  /** Open bugs older than TROUBLE_AGE_DAYS. Optional until the API returns it. */
-  agedOpen?: number;
-  /** e.g. "14m ago", formatted by the caller (dates are formatted in the user's time zone) */
-  updatedLabel: string;
 };
 
 const LEGEND = [
@@ -24,9 +20,10 @@ const LEGEND = [
  * One project on the projects grid. Five-second test: you can tell which project is in trouble.
  * The trouble line is the only accent colour on the card.
  */
-export function ProjectCard({ project, href, agedOpen = 0, updatedLabel }: ProjectCardProps) {
+export function ProjectCard({ project, href }: ProjectCardProps) {
   const { bugSummary } = project;
   const failing = bugSummary.byStatus.failed;
+  const { agedOpen } = bugSummary;
   const trouble = [
     failing > 0 && `${failing} failed QA`,
     agedOpen > 0 && `${agedOpen} open > ${TROUBLE_AGE_DAYS}d`,
@@ -69,7 +66,8 @@ export function ProjectCard({ project, href, agedOpen = 0, updatedLabel }: Proje
           </span>
         )}
         <span className="text-ink-3">
-          {project.memberCount} {project.memberCount === 1 ? 'member' : 'members'} · {updatedLabel}
+          {project.memberCount} {project.memberCount === 1 ? 'member' : 'members'} ·{' '}
+          {formatRelative(project.updatedAt)}
         </span>
       </div>
     </Link>

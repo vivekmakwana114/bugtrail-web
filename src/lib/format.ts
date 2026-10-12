@@ -35,3 +35,19 @@ export function initials(name: string): string {
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 }
+
+const dateFormat = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' });
+
+/**
+ * "just now", "14m ago", "3h ago", "2d ago", then a date ("12 Oct") after a week.
+ * Call it only in client-rendered UI: the server's clock and time zone differ from the user's.
+ * @param iso ISO timestamp from the API
+ */
+export function formatRelative(iso: string, now: number = Date.now()): string {
+  const elapsed = now - new Date(iso).getTime();
+  if (elapsed < MINUTE) return 'just now';
+  if (elapsed < HOUR) return `${Math.floor(elapsed / MINUTE)}m ago`;
+  if (elapsed < DAY) return `${Math.floor(elapsed / HOUR)}h ago`;
+  if (elapsed < 7 * DAY) return `${Math.floor(elapsed / DAY)}d ago`;
+  return dateFormat.format(new Date(iso));
+}

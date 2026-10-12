@@ -3,7 +3,6 @@
 import { useState, type ReactNode } from 'react';
 import { MoreHorizontal, Plus, Search } from 'lucide-react';
 import { toast } from 'sonner';
-import type { ProjectListItem } from '@/types/api';
 import { BUG_STATUSES, STATUS_META } from '@/config/statuses';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -236,25 +235,9 @@ export function DesignPreview() {
 
       <Section title="Project cards" note="Five-second test: which project is in trouble?">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {SAMPLE_PROJECTS.map(
-            ({
-              project,
-              agedOpen,
-              updatedLabel,
-            }: {
-              project: ProjectListItem;
-              agedOpen: number;
-              updatedLabel: string;
-            }) => (
-              <ProjectCard
-                key={project.id}
-                project={project}
-                href="/design"
-                agedOpen={agedOpen}
-                updatedLabel={updatedLabel}
-              />
-            ),
-          )}
+          {SAMPLE_PROJECTS.map((project) => (
+            <ProjectCard key={project.id} project={project} href="/design" />
+          ))}
         </div>
       </Section>
 

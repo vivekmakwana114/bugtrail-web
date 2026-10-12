@@ -1,38 +1,25 @@
 'use client';
 
+import { Segmented, type SegmentedOption } from '@/components/ui/segmented';
 import type { ThemePreference } from './theme';
 import { useThemePreference } from './use-theme-preference';
-import { cn } from '@/lib/utils';
 
-const OPTIONS: { value: ThemePreference; label: string }[] = [
+const OPTIONS: SegmentedOption<ThemePreference>[] = [
   { value: 'system', label: 'System' },
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
 ];
 
-/** Segmented control for the theme. Lives in the profile menu once the layout exists. */
+/** System / Light / Dark. Lives in the profile menu. */
 export function ThemeToggle({ className }: { className?: string }) {
   const [preference, setPreference] = useThemePreference();
   return (
-    <div
-      role="group"
-      aria-label="Theme"
-      className={cn('inline-flex overflow-hidden rounded-md border border-line-strong', className)}
-    >
-      {OPTIONS.map((option, i) => (
-        <button
-          key={option.value}
-          type="button"
-          aria-pressed={preference === option.value}
-          onClick={() => setPreference(option.value)}
-          className={cn(
-            'px-3 py-1.5 text-sm text-ink-2 aria-pressed:bg-ink aria-pressed:text-bg',
-            i > 0 && 'border-l border-line-strong',
-          )}
-        >
-          {option.label}
-        </button>
-      ))}
-    </div>
+    <Segmented
+      label="Theme"
+      value={preference}
+      onChange={setPreference}
+      options={OPTIONS}
+      className={className}
+    />
   );
 }

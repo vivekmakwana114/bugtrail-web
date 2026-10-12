@@ -1,0 +1,178 @@
+'use client';
+
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { Avatar } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState, ErrorState } from '@/components/shared/states';
+import { StatusGlyph } from '@/components/shared/status-glyph';
+import { StatusRing } from '@/components/shared/status-ring';
+import { DetailPage, DetailSection } from '@/components/templates/detail-page';
+import { BUG_STATUSES, STATUS_META, TROUBLE_AGE_DAYS } from '@/config/statuses';
+import { roleLabel } from '@/config/roles';
+import { routes } from '@/config/routes';
+import { getErrorMessage, getErrorStatus } from '@/lib/api-client';
+import { formatCount, formatRelative } from '@/lib/format';
+import type { ProjectDetail } from '@/types/api';
+import { useProject } from '../hooks';
+import { PROJECT_STATUS_LABELS } from '../schemas';
+
+/**
+ * One project: what it is, how its bugs stand, and who's on it. The ticket grid joins this page
+ * in the next step.
+ */
+export function ProjectOverview() {
+  const { projectId } = useParams<{ projectId: string }>();
+  const project = useProject(projectId);
+
+  if (project.isPending) return <ProjectSkeleton />;
+  if (project.isError) {
+    // The API answers 404 both for "doesn't exist" and "not your project", on purpose.
+    return getErrorStatus(project.error) === 404 ? (
+      <EmptyState
+        title="This project isn't available"
+        description="It doesn't exist, it was deleted, or you're not a member. A Project Manager can add you."
+        action={
+          <Button asChild size="sm">
+            <Link href={routes.projects}>Back to projects</Link>
+          </Button>
+        }
+      />
+    ) : (
+      <ErrorState
+        title="This project didn't load"
+        description={getErrorMessage(project.error)}
+        onRetry={() => project.refetch()}
+      />
+    );
+  }
+
+  const p = project.data;
+  return (
+    <DetailPage
+      eyebrow={
+        <>
+          <Link href={routes.projects} className="hover:text-ink">
+            Projects
+          </Link>{' '}
+          / {p.key}
+        </>
+      }
+      title={p.name}
+      aside={<MemberList project={p} />}
+      asideLabel="Members"
+    >
+      <p className={p.description ? 'max-w-prose text-md text-ink' : 'text-sm text-ink-3'}>
+        {p.description || 'No description yet.'}
+      </p>
+      <dl className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
+        <Fact label="Status" value={PROJECT_STATUS_LABELS[p.status]} />
+        <Fact label="Manager" value={p.manager?.name ?? 'Not set'} />
+        <Fact label="Updated" value={formatRelative(p.updatedAt)} mono />
+      </dl>
+      <BugOverview project={p} />
+    </DetailPage>
+  );
+}
+
+function Fact({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="grid gap-0.5">
+      <dt className="text-xs text-ink-3">{label}</dt>
+      <dd className={mono ? 'font-mono' : undefined}>{value}</dd>
+    </div>
+  );
+}
+
+function BugOverview({ project }: { project: ProjectDetail }) {
+  const { bugSummary } = project;
+  const failing = bugSummary.byStatus.failed;
+  return (
+    <DetailSection title="Bugs">
+      {bugSummary.total === 0 ? (
+        <p className="text-sm text-ink-2">No bugs reported in this project yet.</p>
+      ) : (
+        <div className="flex flex-wrap items-center gap-6">
+          <StatusRing pie={bugSummary.pie} open={bugSummary.open} size={112} />
+          <dl className="grid min-w-56 gap-1.5 text-sm">
+            {BUG_STATUSES.map((status) => (
+              <div key={status} className="grid grid-cols-[1rem_1fr_auto] items-center gap-2">
+                <StatusGlyph status={status} />
+                <dt className="text-ink-2">{STATUS_META[status].label}</dt>
+                <dd className="font-mono">{formatCount(bugSummary.byStatus[status])}</dd>
+              </div>
+            ))}
+          </dl>
+          {(failing > 0 || bugSummary.agedOpen > 0) && (
+            <p className="grid gap-1 text-sm font-semibold text-danger">
+              {failing > 0 && (
+                <span>
+                  {failing} failed QA and {failing === 1 ? 'needs' : 'need'} another look
+                </span>
+              )}
+              {bugSummary.agedOpen > 0 && (
+                <span>
+                  {bugSummary.agedOpen} open for more than {TROUBLE_AGE_DAYS} days
+                </span>
+              )}
+            </p>
+          )}
+        </div>
+      )}
+    </DetailSection>
+  );
+}
+
+function MemberList({ project }: { project: ProjectDetail }) {
+  return (
+    <div className="grid gap-3 p-4">
+      <h2 className="flex items-baseline justify-between text-md font-semibold">
+        Members{' '}
+        <span className="font-mono text-xs font-normal text-ink-3">{project.members.length}</span>
+      </h2>
+      {project.members.length === 0 ? (
+        <p className="text-sm text-ink-2">
+          Nobody yet. A Project Manager or an Admin adds the team.
+        </p>
+      ) : (
+        <ul className="grid gap-2.5">
+          {project.members.map((member) => (
+            <li key={member.id} className="flex items-center gap-2.5">
+              <Avatar name={member.name} src={member.avatarUrl} size="md" />
+              <span className="grid min-w-0">
+                <span className="truncate text-sm">
+                  {member.name}
+                  {project.manager?.id === member.id && (
+                    <span className="text-ink-3"> · manager</span>
+                  )}
+                </span>
+                <span className="text-xs text-ink-3">
+                  {roleLabel(member.role)}
+                  {member.status !== 'active' && ` · ${member.status}`}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function ProjectSkeleton() {
+  return (
+    <div className="grid gap-5" aria-busy="true" aria-label="Loading project">
+      <Skeleton className="h-3 w-24" />
+      <Skeleton className="h-7 w-72" />
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_24rem]">
+        <div className="grid gap-3">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-2/3" />
+          <Skeleton className="mt-4 h-28 w-80" />
+        </div>
+        <Skeleton className="h-48" />
+      </div>
+    </div>
+  );
+}

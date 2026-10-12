@@ -66,3 +66,21 @@ The Next server can't see the session (the cookie belongs to the API's address, 
 2. Reload the page and watch the Network tab: `refresh-tokens` then `me`, then the page.
 3. Visit `/login?next=//example.com` and sign in. Where do you land, and which function decided that?
 4. **Exercise:** open the app in two tabs and leave them for over 30 minutes, then click around in both. Both refresh at about the same time with the same cookie. What happens to the second tab, and how could a `BroadcastChannel` let tabs share one refresh? (This is a known gap, noted for later.)
+
+## Added with the panel layout and projects grid
+
+### 7. Filters belong in the URL
+
+The projects grid keeps its status and search in the address (`?status=completed&q=chk`). Refresh, the Back button and a pasted link all show the same view, and nothing needs to be stored. The cost is that the component reads `useSearchParams()`, so it sits inside `<Suspense>` (concept 6).
+
+### 8. Infinite lists without page jumps
+
+`useInfiniteQuery` loads 24 cards at a time behind "Show more projects", and `placeholderData: keepPreviousData` keeps the old cards on screen while a new filter loads. Without it, every keystroke in the search box would flash the grid to a skeleton.
+
+### 9. Why panel pages say `instant = false`
+
+Next 16 checks in development that every page can render on the server for "instant" navigations. Our panel pages only render after the browser has restored the session (the cookie isn't visible to the Next server), so that check can never see them and warns. `export const instant = false` on the panel layout and each panel page tells Next this is deliberate. Navigation inside the panel is client-side, so it stays fast.
+
+### 10. Empty states must be true
+
+The first version told a developer with no projects "No active projects", and could have told someone with only finished projects "You're not on any project", which was wrong for both. The default view only knows there are no **active** projects, so it now says exactly that and offers "Show all projects". Write empty states from what the query actually proves.

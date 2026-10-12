@@ -1,9 +1,17 @@
 import type { Metadata } from 'next';
-import { SignedInPlaceholder } from './signed-in-placeholder';
+import { Suspense } from 'react';
+import { ProjectsPage } from '@/features/projects/components/projects-page';
 
 export const metadata: Metadata = { title: 'Projects · BugTrail' };
 
-// Temporary: proves the sign-in flow end to end. Replaced by the projects grid in the next step.
-export default function ProjectsPage() {
-  return <SignedInPlaceholder />;
+// Rendered only after the browser-side session check: see (panel)/layout.tsx.
+export const instant = false;
+
+export default function Page() {
+  return (
+    // ProjectsPage reads its filters from the URL, which needs a Suspense boundary to prerender.
+    <Suspense>
+      <ProjectsPage />
+    </Suspense>
+  );
 }
