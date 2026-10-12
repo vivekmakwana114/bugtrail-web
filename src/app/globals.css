@@ -1,31 +1,148 @@
 @import 'tailwindcss';
 
 /*
- * Phase 0 baseline only. Design tokens (colour roles, type scale, status
- * colours) are defined in Phase 7 in src/styles/tokens.css after the style
- * tile is approved. Don't add raw colours here.
+ * BugTrail design tokens: the only place colours, type sizes, radii and shadows are defined.
+ * Rules and examples: docs/design/DESIGN_SYSTEM.md. Approved style tile (2026-10-12):
+ * "a calm instrument for triage". Stone neutrals; colour only for the five statuses and danger.
+ *
+ *   1. Tokens       :root (light) and [data-theme='dark']
+ *   2. Theme        @theme maps Tailwind utilities to the tokens and switches off the stock palette
+ *   3. Base         body, focus, selection
+ *
+ * The theme is resolved before first paint by ThemeScript (src/components/theme/theme-script.tsx),
+ * which sets data-theme="light" | "dark" on <html> from the saved choice or the OS setting.
  */
+
+/* ---------------------------------------------------------------- 1. tokens */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* neutrals: stone, a hair warm */
+  --bt-bg: #efeeea; /* page ground */
+  --bt-surface: #f9f9f6; /* panels, rows, inputs */
+  --bt-sunken: #e6e5e0; /* wells, avatars, the card's chart box */
+  --bt-line: #d9d7d0; /* hairlines */
+  --bt-line-strong: #bfbcb3; /* input borders, hover outlines */
+  --bt-ink: #1d1e1c; /* text, primary action */
+  --bt-ink-2: #55564f; /* secondary text */
+  --bt-ink-3: #85857c; /* meta, captions, placeholders */
+
+  /* status: always paired with a glyph (src/components/shared/status-glyph.tsx) */
+  --bt-reported: #3a5fc4;
+  --bt-ongoing: #a86d12;
+  --bt-resolved: #19807b;
+  --bt-pass: #3a7a37;
+  --bt-failed: #bd3f27;
+  --bt-danger: var(--bt-failed);
+
+  --bt-shadow-pop: 0 6px 24px -8px rgb(29 30 28 / 0.28);
+  color-scheme: light;
 }
 
+[data-theme='dark'] {
+  --bt-bg: #151614;
+  --bt-surface: #1c1d1a;
+  --bt-sunken: #121311;
+  --bt-line: #2d2e2a;
+  --bt-line-strong: #44453f;
+  --bt-ink: #e8e7e1;
+  --bt-ink-2: #a8a79e;
+  --bt-ink-3: #75756c;
+
+  --bt-reported: #7f9cf0;
+  --bt-ongoing: #dda54c;
+  --bt-resolved: #4fbdb6;
+  --bt-pass: #78bd70;
+  --bt-failed: #ee7a5f;
+
+  --bt-shadow-pop: 0 6px 24px -8px rgb(0 0 0 / 0.6);
+  color-scheme: dark;
+}
+
+/* `dark:` follows the resolved theme (rarely needed: tokens already switch). */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* ---------------------------------------------------------------- 2. theme */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* No stock palette: bg-red-500 and friends don't exist. Only these colours do. */
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-bg: var(--bt-bg);
+  --color-surface: var(--bt-surface);
+  --color-sunken: var(--bt-sunken);
+  --color-line: var(--bt-line);
+  --color-line-strong: var(--bt-line-strong);
+  --color-ink: var(--bt-ink);
+  --color-ink-2: var(--bt-ink-2);
+  --color-ink-3: var(--bt-ink-3);
+  --color-reported: var(--bt-reported);
+  --color-ongoing: var(--bt-ongoing);
+  --color-resolved: var(--bt-resolved);
+  --color-pass: var(--bt-pass);
+  --color-failed: var(--bt-failed);
+  --color-danger: var(--bt-danger);
+
+  /* Type: Instrument Sans for people, IBM Plex Mono for machine values. 14px base. */
+  --font-*: initial;
+  --font-sans: var(--font-instrument-sans), 'Segoe UI', system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, 'Cascadia Mono', Consolas, monospace;
+
+  --text-*: initial;
+  --text-xs: 0.75rem; /* 12: meta, table headers */
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.8125rem; /* 13: table cells, inputs, buttons */
+  --text-sm--line-height: 1.25rem;
+  --text-md: 0.875rem; /* 14: body */
+  --text-md--line-height: 1.375rem;
+  --text-lg: 1rem; /* 16: section titles */
+  --text-lg--line-height: 1.5rem;
+  --text-xl: 1.25rem; /* 20: page titles */
+  --text-xl--line-height: 1.75rem;
+  --text-2xl: 1.625rem; /* 26: at most once per screen */
+  --text-2xl--line-height: 2rem;
+
+  /* Shape: two radii, hairlines, one shadow for things that float (menus, dialogs). */
+  --radius-*: initial;
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-full: 9999px; /* only for the ring chart and spinners */
+
+  --shadow-*: initial;
+  --shadow-pop: var(--bt-shadow-pop);
+  --shadow-cursor: inset 2px 0 0 var(--bt-ink); /* the keyboard cursor row's ink edge */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ---------------------------------------------------------------- 3. base */
+@layer base {
+  html {
+    background: var(--bt-bg);
   }
-}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
+  body {
+    background: var(--bt-bg);
+    color: var(--bt-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-md);
+    line-height: var(--text-md--line-height);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  *,
+  ::before,
+  ::after {
+    border-color: var(--bt-line);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--bt-ink);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--bt-reported) 28%, transparent);
+  }
+
+  /* Numbers that line up in columns. */
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+  }
 }
