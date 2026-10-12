@@ -7,6 +7,8 @@ export const routes = {
   resetPassword: '/reset-password',
   pendingApproval: '/pending-approval',
   projects: '/projects',
+  project: (projectId: string) => `/projects/${projectId}`,
+  bug: (projectId: string, bugKey: string) => `/projects/${projectId}/bugs/${bugKey}`,
 } as const;
 
 /**
