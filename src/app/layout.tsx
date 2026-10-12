@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { IBM_Plex_Mono, Instrument_Sans } from 'next/font/google';
 import { Toaster } from '@/components/ui/toaster';
+import { AppProviders } from '@/providers/app-providers';
 import { themeBootScript } from '@/components/theme/theme';
 import './globals.css';
 
@@ -34,7 +35,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>
       <body className="flex min-h-full flex-col">
-        {children}
+        <AppProviders>{children}</AppProviders>
         <Toaster />
       </body>
     </html>
