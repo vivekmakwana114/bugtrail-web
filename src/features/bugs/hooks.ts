@@ -1,6 +1,13 @@
 'use client';
 
-import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+import { projectKeys } from '@/features/projects/hooks';
 import * as bugsApi from './api';
 import type { BugListFilters } from './types';
 
@@ -30,5 +37,23 @@ export function useProjectModules(projectId: string) {
     queryKey: bugKeys.modules(projectId),
     queryFn: () => bugsApi.getProjectModules(projectId),
     staleTime: 5 * 60_000,
+  });
+}
+
+/**
+ * Report a bug. A new bug changes the grid, the project's counts (header, Overview, the projects
+ * grid's cards) and maybe the module list, so all of those refetch.
+ */
+export function useCreateBug() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: bugsApi.createBug,
+    onSuccess: (bug) =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: bugKeys.lists() }),
+        queryClient.invalidateQueries({ queryKey: bugKeys.modules(bug.project.id) }),
+        queryClient.invalidateQueries({ queryKey: projectKeys.detail(bug.project.id) }),
+        queryClient.invalidateQueries({ queryKey: projectKeys.lists() }),
+      ]),
   });
 }

@@ -1,14 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useRef, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, Plus } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Kbd } from '@/components/ui/kbd';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableCell, TableHead, TableRow } from '@/components/ui/table';
+import { usePermission } from '@/components/auth/can';
 import { EmptyState, ErrorState, NoAccessState } from '@/components/shared/states';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { MiniTrail } from '@/components/shared/trail';
@@ -21,6 +22,7 @@ import { useBugList, useProjectModules } from '../hooks';
 import type { BugListItem, BugSortField } from '../types';
 import { useGridKeyboard } from '../use-grid-keyboard';
 import { useGridUrlState } from '../use-grid-url-state';
+import { ReportBugDialog } from './report-bug-dialog';
 import { TicketFilters } from './ticket-filters';
 
 type Column = {
@@ -124,6 +126,9 @@ export function TicketGrid({ project }: { project: ProjectDetail }) {
   const modules = useProjectModules(project.id);
   const bugs = list.data?.pages.flatMap((page) => page.results) ?? [];
   const total = list.data?.pages[0]?.totalResults ?? 0;
+  // Archived projects are read-only (the API refuses new bugs there).
+  const canReport = usePermission('bug:create') && project.status !== 'archived';
+  const [reportOpen, setReportOpen] = useState(false);
 
   const openBug = (index: number) => {
     const bug = bugs[index];
@@ -133,6 +138,7 @@ export function TicketGrid({ project }: { project: ProjectDetail }) {
     rowCount: bugs.length,
     onOpen: openBug,
     searchRef,
+    onCreate: canReport ? () => setReportOpen(true) : undefined,
   });
 
   const toggleSort = (field: BugSortField) => {
@@ -176,6 +182,13 @@ export function TicketGrid({ project }: { project: ProjectDetail }) {
       <EmptyState
         title="No bugs reported in this project yet"
         description="When QA reports a bug here, it shows up with its status, assignee, fail count and age."
+        action={
+          canReport && (
+            <Button size="sm" variant="primary" onClick={() => setReportOpen(true)}>
+              Report the first bug
+            </Button>
+          )
+        }
       />
     );
   } else {
@@ -232,6 +245,11 @@ export function TicketGrid({ project }: { project: ProjectDetail }) {
             <Kbd>j</Kbd>
             <Kbd>k</Kbd> move <Kbd className="ml-2">Enter</Kbd> open <Kbd className="ml-2">/</Kbd>{' '}
             search
+            {canReport && (
+              <>
+                <Kbd className="ml-2">c</Kbd> report
+              </>
+            )}
           </span>
           {list.hasNextPage && (
             <Button
@@ -263,13 +281,30 @@ export function TicketGrid({ project }: { project: ProjectDetail }) {
           members={project.members}
           modules={modules.data ?? []}
         />
-        {list.isSuccess && bugs.length > 0 && (
-          <span className="text-sm text-ink-3" aria-live="polite">
-            <span className="font-mono">{formatCount(total)}</span> {total === 1 ? 'bug' : 'bugs'}
-          </span>
-        )}
+        <div className="flex items-center gap-3">
+          {list.isSuccess && bugs.length > 0 && (
+            <span className="text-sm text-ink-3" aria-live="polite">
+              <span className="font-mono">{formatCount(total)}</span> {total === 1 ? 'bug' : 'bugs'}
+            </span>
+          )}
+          {canReport && (
+            <Button variant="primary" onClick={() => setReportOpen(true)}>
+              <Plus aria-hidden />
+              Report bug
+              <Kbd className="border-bg/40 text-bg">c</Kbd>
+            </Button>
+          )}
+        </div>
       </div>
       {content}
+      {canReport && (
+        <ReportBugDialog
+          project={project}
+          modules={modules.data ?? []}
+          open={reportOpen}
+          onOpenChange={setReportOpen}
+        />
+      )}
     </section>
   );
 }

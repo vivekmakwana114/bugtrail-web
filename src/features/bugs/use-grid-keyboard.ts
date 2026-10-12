@@ -16,13 +16,16 @@ type GridKeyboardOptions = {
   rowCount: number;
   onOpen: (index: number) => void;
   searchRef: RefObject<HTMLInputElement | null>;
+  /** c: report a bug. Leave out when the user can't. */
+  onCreate?: () => void;
 };
 
 /**
- * Keyboard-first grid: j / k move the cursor row, Enter opens it, / jumps to search.
+ * Keyboard-first grid: j / k move the cursor row, Enter opens it, / jumps to search,
+ * c reports a bug.
  * Returns the cursor index (-1 = none yet) and a setter, so clicks can move it too.
  */
-export function useGridKeyboard({ rowCount, onOpen, searchRef }: GridKeyboardOptions) {
+export function useGridKeyboard({ rowCount, onOpen, searchRef, onCreate }: GridKeyboardOptions) {
   const [cursor, setCursor] = useState(-1);
   // Keep the cursor on a real row when the list shrinks (a new filter).
   const index = Math.min(cursor, rowCount - 1);
@@ -41,6 +44,9 @@ export function useGridKeyboard({ rowCount, onOpen, searchRef }: GridKeyboardOpt
     } else if (event.key === '/') {
       event.preventDefault();
       searchRef.current?.focus();
+    } else if (event.key === 'c' && onCreate) {
+      event.preventDefault();
+      onCreate();
     }
   });
 

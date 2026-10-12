@@ -1,4 +1,4 @@
-import type { BugStatus, UserRef } from '@/types/api';
+import type { BugStatus, TimeInStatus, UserRef, UserSummary } from '@/types/api';
 
 /** One row of the ticket grid (GET /bugs). */
 export type BugListItem = {
@@ -29,4 +29,31 @@ export type BugListFilters = {
   moduleName?: string;
   search?: string;
   sort: { field: BugSortField; direction: SortDirection };
+};
+
+/** A Google Drive / Docs link (the only kind of attachment). */
+export type BugAttachment = { title: string; url: string };
+
+/** The bug page (GET /bugs/:id), also returned by create and every update. */
+export type BugDetail = {
+  id: string;
+  key: string;
+  project: { id: string; key: string; name: string };
+  title: string;
+  moduleName: string;
+  description: string;
+  attachments: BugAttachment[];
+  status: BugStatus;
+  /** Where this user may move the bug next (the API's transition table, per viewer). */
+  allowedStatuses: BugStatus[];
+  assignee: UserSummary | null;
+  reporter: UserSummary | null;
+  failCount: number;
+  ageMs: number;
+  timeInStatus: TimeInStatus;
+  lastStatusChangedAt: string;
+  resolvedAt: string | null;
+  passedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 };
