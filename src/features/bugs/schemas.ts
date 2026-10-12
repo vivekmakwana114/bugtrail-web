@@ -27,7 +27,8 @@ const attachmentSchema = z.object({
     .refine(isDriveUrl, 'Use a Google Drive link (drive.google.com or docs.google.com).'),
 });
 
-export const reportBugSchema = z.object({
+/** What a bug says: shared by the report form and the edit form. */
+export const bugContentSchema = z.object({
   title: z.string().trim().min(1, 'Say what went wrong.').max(200, 'Keep it under 200 characters.'),
   moduleName: z
     .string()
@@ -36,6 +37,11 @@ export const reportBugSchema = z.object({
     .max(100, 'Keep it under 100 characters.'),
   description: z.string().trim().max(10_000, 'Keep it under 10,000 characters.'),
   attachments: z.array(attachmentSchema).max(MAX_ATTACHMENTS),
+});
+
+export type BugContentValues = z.infer<typeof bugContentSchema>;
+
+export const reportBugSchema = bugContentSchema.extend({
   status: z.enum(BUG_STATUSES),
   /** '' = unassigned (Radix Select can't hold null) */
   assignee: z.string(),

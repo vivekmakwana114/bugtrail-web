@@ -57,3 +57,21 @@ export type BugDetail = {
   createdAt: string;
   updatedAt: string;
 };
+
+/** One timeline entry (GET /bugs/:id/activity), oldest first. */
+export type BugActivityItem =
+  | BugActivityBase<'created', null, BugStatus>
+  | BugActivityBase<'status_changed', BugStatus, BugStatus>
+  | BugActivityBase<'assigned', UserRef | null, UserRef | null>
+  | (BugActivityBase<'updated', null, null> & { fields: string[] })
+  | BugActivityBase<'deleted', null, null>;
+
+type BugActivityBase<T extends string, From, To> = {
+  id: string;
+  type: T;
+  /** null if the user was deleted since */
+  actor: UserRef | null;
+  from: From;
+  to: To;
+  createdAt: string;
+};

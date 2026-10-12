@@ -116,3 +116,25 @@ The module field is free text with suggestions: pick an existing module or type 
 ### 17. Screenshots catch what assertions don't
 
 All 30 checks passed while the Assignee select sat 10px lower than the Module input beside it: the Module field has a hint, the two-column grid stretched both fields to the same height, and a stretched CSS grid spreads the extra space between its rows. `content-start` on `Field` keeps every field packed to the top. Look at the screen, not only at the test output.
+
+## Added with the bug page
+
+### 18. The server decides what's allowed; the client decides how it looks
+
+`allowedStatuses` comes from the API's transition table, per viewer: a developer who isn't the assignee gets `[]`, QA gets every status. The page never recomputes those rules. It only has a small presentation map (`NEXT_STEPS` in `status-control.tsx`) that picks which allowed moves deserve a button ("Start work", "Pass", "Fail") and which go under "More". If the rules change on the server, the page follows without a deploy. When there are no moves, the page says why in workflow terms ("Waiting for QA to pass or fail it") instead of showing disabled buttons.
+
+### 19. A refused change usually means the page is stale
+
+Status and assignee changes are conditional updates on the server: if the bug changed since you loaded it, you get 409, or 400 "already resolved", or 403 "you can't move it from X". All three mean "what you see is out of date", so every failed bug mutation refetches the bug (`refetchBug` in `hooks.ts`). The toast explains, and the page is already showing the truth by the time you read it.
+
+### 20. One mutation hook, three endpoints
+
+Status, assign and edit hit different endpoints but share what happens after: put the returned bug in the cache (no refetch needed), then invalidate the timeline, the grid rows and the project's counts. `useBugMutation(bug, request)` holds that once; the three hooks are one line each. Same result, and a fourth change type later can't forget a cache key.
+
+### 21. Dialogs that open from state never see "open"
+
+Radix calls `onOpenChange` when the user closes a dialog, not when the parent opens it with `setDialog('edit')`. So "reset the form when it opens" code in `onOpenChange(true)` never runs. Two patterns instead: the edit form uses RHF's `values` option to follow the bug (keeping what the user has typed), and the assign dialog keeps only "what you picked" in state and falls back to the current assignee.
+
+### 22. Don't remove a query that a mounted page is watching
+
+After a delete, `removeQueries` on the bug made the still-mounted bug page fetch it again at once, a pointless 404. `invalidateQueries({ refetchType: 'none' })` marks it stale without fetching; if the user goes Back, it refetches then and shows "isn't available".
