@@ -1,23 +1,23 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSocket } from '@/providers/socket-provider';
 import * as notificationsApi from './api';
+import { notificationKeys } from './keys';
 
-export const notificationKeys = {
-  all: ['notifications'] as const,
-  unreadCount: () => [...notificationKeys.all, 'unread-count'] as const,
-  recent: () => [...notificationKeys.all, 'recent'] as const,
-};
+export { notificationKeys };
 
 /**
- * The number on the bell. Polls every minute for now; once the Socket.IO client is wired in,
- * `notification:new` will update it instantly and polling becomes the fallback.
+ * The number on the bell. While the socket is connected, `notification:new` refreshes it the
+ * moment something arrives (SocketProvider); polling every minute is only the fallback for when
+ * it isn't.
  */
 export function useUnreadCount() {
+  const { connected } = useSocket();
   return useQuery({
     queryKey: notificationKeys.unreadCount(),
     queryFn: notificationsApi.getUnreadCount,
-    refetchInterval: 60_000,
+    refetchInterval: connected ? false : 60_000,
   });
 }
 

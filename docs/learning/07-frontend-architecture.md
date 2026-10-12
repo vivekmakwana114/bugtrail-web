@@ -138,3 +138,25 @@ Radix calls `onOpenChange` when the user closes a dialog, not when the parent op
 ### 22. Don't remove a query that a mounted page is watching
 
 After a delete, `removeQueries` on the bug made the still-mounted bug page fetch it again at once, a pointless 404. `invalidateQueries({ refetchType: 'none' })` marks it stale without fetching; if the user goes Back, it refetches then and shows "isn't available".
+
+## Added with live chat
+
+### 23. Sockets push, REST changes
+
+The socket never changes data. Sending, editing and deleting a message, moving a bug: all REST calls, validated and permission-checked like any other. The server then broadcasts what happened, and the page writes it into the TanStack Query cache (`useBugRoom`). One write path means one place for validation and permissions, and a client that can't open a socket still works: it just learns about changes later (the bell falls back to polling every 60s while disconnected).
+
+### 24. The same message arrives twice; make that harmless
+
+When you send a message, you get it back in the POST response and again as the room broadcast. Both go through `upsertMessage`, which replaces by id or appends. Idempotent updates are simpler than trying to suppress one of the two, and they also cover the reverse order (broadcast first, response second).
+
+### 25. Reconnecting is a gap, not a pause
+
+Socket.IO reconnects by itself, but rooms don't survive a dropped connection and anything broadcast in between is gone. So `useBugRoom` rejoins on every `connect`, and after a successful *re*join it refetches the bug, timeline and chat. The test for this restarts the API mid-session, posts a message before the browser is back, and checks it appears. The handshake token is a function (`auth: (send) => send({ token })`) so a reconnect half an hour later sends the current token, not the expired one from when the tab opened.
+
+### 26. Keeping the reader's place in a chat
+
+Three cases, decided in one `useLayoutEffect` after each render, before the browser paints: first load jumps to the bottom; older messages added on top shift `scrollTop` by exactly the height they added (what you were reading doesn't move); a new message at the bottom follows it only if you were already near the bottom or sent it, and otherwise shows a "New messages" pill. `useLayoutEffect` (not `useEffect`) so the user never sees the jump-then-correct flicker.
+
+### 27. Screen readers and live lists
+
+`aria-live` on the whole message list would read 30 messages aloud every time older ones load. Instead a visually hidden `role="status"` line holds only the newest message from someone else, so the announcement is exactly "New message from Riya Shah: …". (It also tripped a test: the same text existed twice on the page. Scope test selectors to the region you mean.)

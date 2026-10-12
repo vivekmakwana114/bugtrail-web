@@ -24,7 +24,9 @@ import { formatDateTime, formatDuration, formatRelative } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useProject } from '@/features/projects/hooks';
 import type { ProjectDetail } from '@/types/api';
+import { ChatPanel } from '@/features/chat/components/chat-panel';
 import { useBug, useProjectModules } from '../hooks';
+import { useBugRoom } from '../use-bug-room';
 import type { BugDetail } from '../types';
 import { AssignBugDialog } from './assign-bug-dialog';
 import { BugTimeline } from './bug-timeline';
@@ -73,13 +75,20 @@ function BugView({ bug, project }: { bug: BugDetail; project: ProjectDetail }) {
   const canEdit = usePermission('bug:update') && writable;
   const canAssign = usePermission('bug:assign') && writable;
   const canDelete = usePermission('bug:delete');
+  const canReadChat = usePermission('chat:read');
   const [dialog, setDialog] = useState<'edit' | 'assign' | 'delete' | null>(null);
   const openDialog = (name: typeof dialog) => () => setDialog(name);
   const onDialogChange = (open: boolean) => !open && setDialog(null);
+  // Live: other people's status moves, edits and messages show up without a refresh.
+  useBugRoom(bug);
 
   return (
     <>
       <DetailPage
+        asideLabel="Chat"
+        aside={
+          canReadChat && <ChatPanel bugId={bug.id} members={project.members} readOnly={!writable} />
+        }
         eyebrow={
           <>
             <Link href={routes.projects} className="hover:text-ink">
