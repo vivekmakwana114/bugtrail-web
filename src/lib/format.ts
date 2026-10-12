@@ -51,3 +51,19 @@ export function formatRelative(iso: string, now: number = Date.now()): string {
   if (elapsed < 7 * DAY) return `${Math.floor(elapsed / DAY)}d ago`;
   return dateFormat.format(new Date(iso));
 }
+
+const dateTimeFormat = new Intl.DateTimeFormat('en-GB', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
+/**
+ * "12 Oct 2026, 14:05" in the user's time zone. For tooltips and fact lists next to a relative
+ * time, so both "how long ago" and "exactly when" are one glance away. Client-rendered UI only.
+ */
+export function formatDateTime(iso: string): string {
+  return dateTimeFormat.format(new Date(iso));
+}

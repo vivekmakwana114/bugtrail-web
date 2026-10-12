@@ -1,6 +1,12 @@
 import { api } from '@/lib/api-client';
 import type { BugStatus, Page } from '@/types/api';
-import type { BugAttachment, BugDetail, BugListFilters, BugListItem } from './types';
+import type {
+  BugActivityItem,
+  BugAttachment,
+  BugDetail,
+  BugListFilters,
+  BugListItem,
+} from './types';
 
 export async function getBugs(
   projectId: string,
@@ -43,4 +49,43 @@ export type CreateBugInput = {
 export async function createBug(input: CreateBugInput): Promise<BugDetail> {
   const { data } = await api.post<BugDetail>('/bugs', input);
   return data;
+}
+
+/** By id or by key (CHK-142): the bug page URL uses the key. */
+export async function getBug(bugRef: string): Promise<BugDetail> {
+  const { data } = await api.get<BugDetail>(`/bugs/${bugRef}`);
+  return data;
+}
+
+export async function getBugActivity(bugRef: string): Promise<BugActivityItem[]> {
+  const { data } = await api.get<{ activity: BugActivityItem[] }>(`/bugs/${bugRef}/activity`);
+  return data.activity;
+}
+
+export async function changeBugStatus(
+  bugId: string,
+  input: { status: BugStatus; sendEmail: boolean },
+): Promise<BugDetail> {
+  const { data } = await api.patch<BugDetail>(`/bugs/${bugId}/status`, input);
+  return data;
+}
+
+export async function assignBug(
+  bugId: string,
+  input: { assignee: string | null; sendEmail: boolean },
+): Promise<BugDetail> {
+  const { data } = await api.patch<BugDetail>(`/bugs/${bugId}/assign`, input);
+  return data;
+}
+
+export async function updateBug(
+  bugId: string,
+  input: Pick<BugDetail, 'title' | 'moduleName' | 'description' | 'attachments'>,
+): Promise<BugDetail> {
+  const { data } = await api.patch<BugDetail>(`/bugs/${bugId}`, input);
+  return data;
+}
+
+export async function deleteBug(bugId: string): Promise<void> {
+  await api.delete(`/bugs/${bugId}`);
 }

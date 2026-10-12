@@ -1,31 +1,29 @@
 'use client';
 
 import { useState } from 'react';
-import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form';
+import { useRouter } from 'next/navigation';
+import { Controller, FormProvider, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
-import { Link2, Plus, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Field } from '@/components/ui/field';
-import { Input, Textarea } from '@/components/ui/input';
 import { Select, type SelectOption } from '@/components/ui/select';
-import { Avatar } from '@/components/ui/avatar';
 import { StatusGlyph } from '@/components/shared/status-glyph';
 import { FormDialog } from '@/components/templates/form-dialog';
 import { usePermission } from '@/components/auth/can';
+import { routes } from '@/config/routes';
 import { BUG_STATUSES, STATUS_META } from '@/config/statuses';
 import { getErrorMessage } from '@/lib/api-client';
 import type { ProjectDetail } from '@/types/api';
 import { useCreateBug } from '../hooks';
+import { reportBugDefaults, reportBugSchema, type ReportBugValues } from '../schemas';
+import { assigneeOptions, UNASSIGNED } from './assignee-options';
 import {
-  MAX_ATTACHMENTS,
-  reportBugDefaults,
-  reportBugSchema,
-  type ReportBugValues,
-} from '../schemas';
-
-const UNASSIGNED = 'none';
+  BugDescriptionField,
+  BugLinksField,
+  BugModuleField,
+  BugTitleField,
+} from './bug-content-fields';
 
 type ReportBugDialogProps = {
   project: ProjectDetail;
@@ -35,28 +33,34 @@ type ReportBugDialogProps = {
   onOpenChange: (open: boolean) => void;
 };
 
+const statusOptions: SelectOption[] = BUG_STATUSES.map((status) => ({
+  value: status,
+  label: STATUS_META[status].label,
+  icon: <StatusGlyph status={status} />,
+}));
+
 /**
  * Report a bug (bug:create). Only QA and Admin (bug:set_any_status) may file a bug in a status
  * other than Reported, so everyone else doesn't see the status picker at all. The API enforces
  * the same rules; this only avoids offering choices that would be refused.
  */
 export function ReportBugDialog({ project, modules, open, onOpenChange }: ReportBugDialogProps) {
+  const router = useRouter();
   const createBug = useCreateBug();
   const canSetStatus = usePermission('bug:set_any_status');
   const [formError, setFormError] = useState<string>();
+  const form = useForm<ReportBugValues>({
+    resolver: zodResolver(reportBugSchema),
+    defaultValues: reportBugDefaults,
+  });
   const {
-    register,
     control,
     handleSubmit,
     setValue,
     setError,
     reset,
     formState: { errors },
-  } = useForm<ReportBugValues>({
-    resolver: zodResolver(reportBugSchema),
-    defaultValues: reportBugDefaults,
-  });
-  const attachments = useFieldArray({ control, name: 'attachments' });
+  } = form;
   const assignee = useWatch({ control, name: 'assignee' });
 
   const close = (next: boolean) => {
@@ -66,24 +70,6 @@ export function ReportBugDialog({ project, modules, open, onOpenChange }: Report
     }
     onOpenChange(next);
   };
-
-  // Any member with a role can work on bugs (every role has bug:progress); pending or
-  // suspended accounts can't be assigned.
-  const assigneeOptions: SelectOption[] = [
-    { value: UNASSIGNED, label: 'Unassigned' },
-    ...project.members
-      .filter((member) => member.status === 'active' && member.role)
-      .map((member) => ({
-        value: member.id,
-        label: member.name,
-        icon: <Avatar name={member.name} src={member.avatarUrl} />,
-      })),
-  ];
-  const statusOptions: SelectOption[] = BUG_STATUSES.map((status) => ({
-    value: status,
-    label: STATUS_META[status].label,
-    icon: <StatusGlyph status={status} />,
-  }));
 
   const onSubmit = handleSubmit(async (values) => {
     setFormError(undefined);
@@ -96,6 +82,7 @@ export function ReportBugDialog({ project, modules, open, onOpenChange }: Report
       });
       toast.success('Bug reported', {
         description: bug.assignee ? `${bug.key} · assigned to ${bug.assignee.name}` : bug.key,
+        action: { label: 'Open', onClick: () => router.push(routes.bug(project.id, bug.key)) },
       });
       close(false);
     } catch (error) {
@@ -139,146 +126,57 @@ export function ReportBugDialog({ project, modules, open, onOpenChange }: Report
       }
       onSubmit={onSubmit}
     >
-      <Field id="bug-title" label="Title" error={errors.title?.message}>
-        <Input
-          id="bug-title"
-          autoFocus
-          placeholder="Cart badge count is off by one after removing the last item"
-          aria-invalid={!!errors.title}
-          {...register('title')}
-        />
-      </Field>
+      <FormProvider {...form}>
+        <BugTitleField />
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field
-          id="bug-module"
-          label="Module or screen"
-          hint={modules.length ? 'Pick one already in use, or type a new one.' : undefined}
-          error={errors.moduleName?.message}
-        >
-          {/* The browser's own suggestion list: free text, with existing modules offered as you type. */}
-          <Input
-            id="bug-module"
-            list="bug-module-options"
-            autoComplete="off"
-            placeholder="Checkout"
-            aria-invalid={!!errors.moduleName}
-            {...register('moduleName')}
-          />
-          <datalist id="bug-module-options">
-            {modules.map((name) => (
-              <option key={name} value={name} />
-            ))}
-          </datalist>
-        </Field>
-        <Field id="bug-assignee" label="Assignee" error={errors.assignee?.message}>
-          <Controller
-            control={control}
-            name="assignee"
-            render={({ field }) => (
-              <Select
-                id="bug-assignee"
-                value={field.value || UNASSIGNED}
-                onValueChange={(value) => {
-                  const next = value === UNASSIGNED ? '' : value;
-                  field.onChange(next);
-                  if (!next) setValue('sendEmail', false);
-                }}
-                options={assigneeOptions}
-                aria-invalid={!!errors.assignee}
-              />
-            )}
-          />
-        </Field>
-      </div>
-
-      {canSetStatus && (
-        <Field
-          id="bug-status"
-          label="Status"
-          hint="Usually Reported. Pick another to log a bug that's already moving."
-          className="sm:w-1/2 sm:pr-2"
-        >
-          <Controller
-            control={control}
-            name="status"
-            render={({ field }) => (
-              <Select
-                id="bug-status"
-                value={field.value}
-                onValueChange={field.onChange}
-                options={statusOptions}
-              />
-            )}
-          />
-        </Field>
-      )}
-
-      <Field
-        id="bug-description"
-        label="Steps to reproduce (optional)"
-        hint="What you did, what you expected, what happened."
-        error={errors.description?.message}
-      >
-        <Textarea
-          id="bug-description"
-          rows={5}
-          aria-invalid={!!errors.description}
-          {...register('description')}
-        />
-      </Field>
-
-      <fieldset className="grid gap-2">
-        <legend className="mb-1 text-xs font-medium text-ink-2">Drive links (optional)</legend>
-        {attachments.fields.map((item, index) => {
-          const fieldErrors = errors.attachments?.[index];
-          return (
-            <div key={item.id} className="grid gap-1">
-              {/* Phone: name and remove on one line, the URL full width below it. */}
-              <div className="flex flex-wrap items-start gap-2 sm:flex-nowrap">
-                <Input
-                  aria-label={`Link ${index + 1} name`}
-                  placeholder="Screen recording"
-                  className="min-w-0 flex-1 sm:w-44 sm:flex-none"
-                  aria-invalid={!!fieldErrors?.title}
-                  {...register(`attachments.${index}.title`)}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <BugModuleField modules={modules} />
+          <Field id="bug-assignee" label="Assignee" error={errors.assignee?.message}>
+            <Controller
+              control={control}
+              name="assignee"
+              render={({ field }) => (
+                <Select
+                  id="bug-assignee"
+                  value={field.value || UNASSIGNED}
+                  onValueChange={(value) => {
+                    const next = value === UNASSIGNED ? '' : value;
+                    field.onChange(next);
+                    if (!next) setValue('sendEmail', false);
+                  }}
+                  options={assigneeOptions(project.members)}
+                  aria-invalid={!!errors.assignee}
                 />
-                <Input
-                  aria-label={`Link ${index + 1} URL`}
-                  placeholder="https://drive.google.com/…"
-                  className="order-last basis-full font-mono sm:order-none sm:basis-auto"
-                  aria-invalid={!!fieldErrors?.url}
-                  {...register(`attachments.${index}.url`)}
-                />
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  aria-label={`Remove link ${index + 1}`}
-                  onClick={() => attachments.remove(index)}
-                >
-                  <X aria-hidden />
-                </Button>
-              </div>
-              {(fieldErrors?.title || fieldErrors?.url) && (
-                <p role="alert" className="text-xs text-danger">
-                  {fieldErrors.title?.message ?? fieldErrors.url?.message}
-                </p>
               )}
-            </div>
-          );
-        })}
-        {attachments.fields.length < MAX_ATTACHMENTS && (
-          <Button
-            size="sm"
-            variant="ghost"
-            className="justify-self-start"
-            onClick={() => attachments.append({ title: '', url: '' }, { shouldFocus: true })}
+            />
+          </Field>
+        </div>
+
+        {canSetStatus && (
+          <Field
+            id="bug-status"
+            label="Status"
+            hint="Usually Reported. Pick another to log a bug that's already moving."
+            className="sm:w-1/2 sm:pr-2"
           >
-            {attachments.fields.length ? <Plus aria-hidden /> : <Link2 aria-hidden />}
-            {attachments.fields.length ? 'Add another link' : 'Add a Drive link'}
-          </Button>
+            <Controller
+              control={control}
+              name="status"
+              render={({ field }) => (
+                <Select
+                  id="bug-status"
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  options={statusOptions}
+                />
+              )}
+            />
+          </Field>
         )}
-      </fieldset>
+
+        <BugDescriptionField />
+        <BugLinksField />
+      </FormProvider>
     </FormDialog>
   );
 }
