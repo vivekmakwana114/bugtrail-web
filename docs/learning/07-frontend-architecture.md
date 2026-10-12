@@ -98,3 +98,21 @@ The plan listed TanStack Table for the grid. Sorting, filtering and paging all h
 ### 13. A real bug the screen found in the API
 
 Filtering by **Unassigned** made the API answer 500. The cause was one line in `bug.service.js`: `{ me: id, none: null }[assignee] ?? new ObjectId(assignee)`. `??` treats `null` as missing, so "none" fell through to `new ObjectId('none')`, which throws. Lookup tables that can legitimately hold `null` don't mix with `??`; explicit branches don't have that trap.
+
+## Added with the report-bug form
+
+### 14. Offer only what the API will accept
+
+The API refuses a new bug in any status but Reported unless you hold `bug:set_any_status`, refuses new bugs in archived projects, and only emails the assignee. The form mirrors each rule instead of letting the request fail: the Status picker only renders for QA and Admin, the Report bug button (and `c`) disappear on archived projects and for roles without `bug:create`, and "Email the assignee" stays disabled until someone is assigned. The API still checks everything; the UI just never offers a choice it knows will be refused.
+
+### 15. Variable-length fields with `useFieldArray`
+
+Drive links are a list the user grows and shrinks. `useFieldArray` gives each row a stable `id` for React's `key` (never the index, or removing row 1 would shift row 2's typed text into it), registers fields as `attachments.0.url`, and maps zod's per-row errors back to the right row. `append(..., { shouldFocus: true })` puts the cursor in the new row.
+
+### 16. `<datalist>` before a custom combobox
+
+The module field is free text with suggestions: pick an existing module or type a new one. The browser's `<datalist>` does exactly that with zero JavaScript and full keyboard and screen-reader support. A custom combobox would look more on-brand but needs focus management, filtering and ARIA wiring. Revisit if the suggestion list ever needs rich rows (counts, icons).
+
+### 17. Screenshots catch what assertions don't
+
+All 30 checks passed while the Assignee select sat 10px lower than the Module input beside it: the Module field has a hint, the two-column grid stretched both fields to the same height, and a stretched CSS grid spreads the extra space between its rows. `content-start` on `Field` keeps every field packed to the top. Look at the screen, not only at the test output.

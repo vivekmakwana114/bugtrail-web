@@ -1,6 +1,6 @@
 import { api } from '@/lib/api-client';
-import type { Page } from '@/types/api';
-import type { BugListFilters, BugListItem } from './types';
+import type { BugStatus, Page } from '@/types/api';
+import type { BugAttachment, BugDetail, BugListFilters, BugListItem } from './types';
 
 export async function getBugs(
   projectId: string,
@@ -27,4 +27,20 @@ export async function getBugs(
 export async function getProjectModules(projectId: string): Promise<string[]> {
   const { data } = await api.get<{ modules: string[] }>(`/projects/${projectId}/modules`);
   return data.modules;
+}
+
+export type CreateBugInput = {
+  project: string;
+  title: string;
+  moduleName: string;
+  description: string;
+  attachments: BugAttachment[];
+  status: BugStatus;
+  assignee: string | null;
+  sendEmail: boolean;
+};
+
+export async function createBug(input: CreateBugInput): Promise<BugDetail> {
+  const { data } = await api.post<BugDetail>('/bugs', input);
+  return data;
 }

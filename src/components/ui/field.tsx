@@ -16,7 +16,8 @@ type FieldProps = {
 /** Label + control + hint or error. Every form field uses this, so they all line up. */
 export function Field({ id, label, hint, error, className, children }: FieldProps) {
   return (
-    <div className={cn('grid gap-1', className)}>
+    // content-start: in a row of fields, one with a hint mustn't push its neighbour's control down.
+    <div className={cn('grid content-start gap-1', className)}>
       <Label.Root htmlFor={id} className="text-xs font-medium text-ink-2">
         {label}
       </Label.Root>
