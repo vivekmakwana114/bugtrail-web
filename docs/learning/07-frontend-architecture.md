@@ -84,3 +84,17 @@ Next 16 checks in development that every page can render on the server for "inst
 ### 10. Empty states must be true
 
 The first version told a developer with no projects "No active projects", and could have told someone with only finished projects "You're not on any project", which was wrong for both. The default view only knows there are no **active** projects, so it now says exactly that and offers "Show all projects". Write empty states from what the query actually proves.
+
+## Added with the ticket grid
+
+### 11. When not to add a library
+
+The plan listed TanStack Table for the grid. Sorting, filtering and paging all happen on the server, so a headless table library would only have mapped columns to cells. A typed `Column[]` list (`ticket-grid.tsx`) does that in a few lines, with no new dependency to learn and upgrade. Add a library when it does real work; reach for it again if the grid ever sorts or groups in the browser.
+
+### 12. Keyboard shortcuts that don't fight the user
+
+`useGridKeyboard` listens on `document` but ignores keys while you're typing (inputs, textareas), inside menus and dialogs, or holding Ctrl/Cmd/Alt. `useEffectEvent` lets the listener read the latest row count without being re-attached on every render. Try typing "j" in the search box: it types, it doesn't move the cursor.
+
+### 13. A real bug the screen found in the API
+
+Filtering by **Unassigned** made the API answer 500. The cause was one line in `bug.service.js`: `{ me: id, none: null }[assignee] ?? new ObjectId(assignee)`. `??` treats `null` as missing, so "none" fell through to `new ObjectId('none')`, which throws. Lookup tables that can legitimately hold `null` don't mix with `??`; explicit branches don't have that trap.

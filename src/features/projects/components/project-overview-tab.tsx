@@ -1,78 +1,37 @@
 'use client';
 
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
 import { Avatar } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { EmptyState, ErrorState } from '@/components/shared/states';
 import { StatusGlyph } from '@/components/shared/status-glyph';
 import { StatusRing } from '@/components/shared/status-ring';
-import { DetailPage, DetailSection } from '@/components/templates/detail-page';
+import { DetailSection } from '@/components/templates/detail-page';
 import { BUG_STATUSES, STATUS_META, TROUBLE_AGE_DAYS } from '@/config/statuses';
 import { roleLabel } from '@/config/roles';
-import { routes } from '@/config/routes';
-import { getErrorMessage, getErrorStatus } from '@/lib/api-client';
 import { formatCount, formatRelative } from '@/lib/format';
 import type { ProjectDetail } from '@/types/api';
-import { useProject } from '../hooks';
 import { PROJECT_STATUS_LABELS } from '../schemas';
 
 /**
- * One project: what it is, how its bugs stand, and who's on it. The ticket grid joins this page
- * in the next step.
+ * The project's Overview tab: what it is, how its bugs stand, and who's on it.
+ * (The page header, tabs and loading/error states live in ProjectPage.)
  */
-export function ProjectOverview() {
-  const { projectId } = useParams<{ projectId: string }>();
-  const project = useProject(projectId);
-
-  if (project.isPending) return <ProjectSkeleton />;
-  if (project.isError) {
-    // The API answers 404 both for "doesn't exist" and "not your project", on purpose.
-    return getErrorStatus(project.error) === 404 ? (
-      <EmptyState
-        title="This project isn't available"
-        description="It doesn't exist, it was deleted, or you're not a member. A Project Manager can add you."
-        action={
-          <Button asChild size="sm">
-            <Link href={routes.projects}>Back to projects</Link>
-          </Button>
-        }
-      />
-    ) : (
-      <ErrorState
-        title="This project didn't load"
-        description={getErrorMessage(project.error)}
-        onRetry={() => project.refetch()}
-      />
-    );
-  }
-
-  const p = project.data;
+export function ProjectOverviewTab({ project: p }: { project: ProjectDetail }) {
   return (
-    <DetailPage
-      eyebrow={
-        <>
-          <Link href={routes.projects} className="hover:text-ink">
-            Projects
-          </Link>{' '}
-          / {p.key}
-        </>
-      }
-      title={p.name}
-      aside={<MemberList project={p} />}
-      asideLabel="Members"
-    >
-      <p className={p.description ? 'max-w-prose text-md text-ink' : 'text-sm text-ink-3'}>
-        {p.description || 'No description yet.'}
-      </p>
-      <dl className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
-        <Fact label="Status" value={PROJECT_STATUS_LABELS[p.status]} />
-        <Fact label="Manager" value={p.manager?.name ?? 'Not set'} />
-        <Fact label="Updated" value={formatRelative(p.updatedAt)} mono />
-      </dl>
-      <BugOverview project={p} />
-    </DetailPage>
+    <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_24rem]">
+      <div className="grid min-w-0 gap-5">
+        <p className={p.description ? 'max-w-prose text-md text-ink' : 'text-sm text-ink-3'}>
+          {p.description || 'No description yet.'}
+        </p>
+        <dl className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
+          <Fact label="Status" value={PROJECT_STATUS_LABELS[p.status]} />
+          <Fact label="Manager" value={p.manager?.name ?? 'Not set'} />
+          <Fact label="Updated" value={formatRelative(p.updatedAt)} mono />
+        </dl>
+        <BugOverview project={p} />
+      </div>
+      <aside aria-label="Members" className="rounded-md border border-line bg-surface">
+        <MemberList project={p} />
+      </aside>
+    </div>
   );
 }
 
@@ -156,23 +115,6 @@ function MemberList({ project }: { project: ProjectDetail }) {
           ))}
         </ul>
       )}
-    </div>
-  );
-}
-
-function ProjectSkeleton() {
-  return (
-    <div className="grid gap-5" aria-busy="true" aria-label="Loading project">
-      <Skeleton className="h-3 w-24" />
-      <Skeleton className="h-7 w-72" />
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_24rem]">
-        <div className="grid gap-3">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-2/3" />
-          <Skeleton className="mt-4 h-28 w-80" />
-        </div>
-        <Skeleton className="h-48" />
-      </div>
     </div>
   );
 }

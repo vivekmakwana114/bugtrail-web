@@ -23,6 +23,8 @@ type SelectProps = {
   disabled?: boolean;
   className?: string;
   'aria-invalid'?: boolean;
+  /** Required when there's no visible <label> (filters in a toolbar). */
+  'aria-label'?: string;
 };
 
 /** A single-choice dropdown built from an options list, so every select looks and behaves the same. */

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import { ProjectOverview } from '@/features/projects/components/project-overview';
+import { ProjectPage } from '@/features/projects/components/project-page';
 
 export const metadata: Metadata = { title: 'Project · BugTrail' };
 
@@ -9,9 +9,9 @@ export const instant = false;
 
 export default function Page() {
   return (
-    // The project id is request data (no generateStaticParams), so it's read inside Suspense.
+    // The project id and ?tab= are request data, so they're read inside Suspense.
     <Suspense>
-      <ProjectOverview />
+      <ProjectPage />
     </Suspense>
   );
 }
