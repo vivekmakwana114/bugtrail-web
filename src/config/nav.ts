@@ -1,4 +1,4 @@
-import { FolderKanban, LayoutDashboard, type LucideIcon } from 'lucide-react';
+import { FolderKanban, LayoutDashboard, Users, type LucideIcon } from 'lucide-react';
 import { routes } from './routes';
 
 export type NavItem = {
@@ -12,7 +12,7 @@ export type NavItem = {
 /**
  * Sidebar items, in order. An item is added here in the same change that builds its screen,
  * so the sidebar never links to a page that doesn't exist yet.
- * Coming with their screens: Users (user:read), Roles, Notifications.
+ * Coming with their screens: Roles, Notifications.
  */
 export const NAV_ITEMS: NavItem[] = [
   {
@@ -22,4 +22,5 @@ export const NAV_ITEMS: NavItem[] = [
     permission: 'dashboard:view',
   },
   { label: 'Projects', href: routes.projects, icon: FolderKanban, permission: 'project:read' },
+  { label: 'Users', href: routes.users, icon: Users, permission: 'user:read' },
 ];

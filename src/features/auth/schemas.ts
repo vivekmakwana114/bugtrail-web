@@ -5,13 +5,13 @@ import { z } from 'zod';
  * first so people see mistakes before a round trip. The API still validates everything.
  */
 
-const email = z
+export const email = z
   .string()
   .trim()
   .min(1, 'Enter your email.')
   .email('Enter a valid email, like name@invennico.com.');
 
-const newPassword = z
+export const newPassword = z
   .string()
   .min(8, 'Use at least 8 characters.')
   .regex(/[a-zA-Z]/, 'Include at least one letter.')

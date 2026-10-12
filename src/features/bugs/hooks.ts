@@ -23,6 +23,8 @@ export const bugKeys = {
   /** The bug page is addressed by key (CHK-142), so its cache is too. */
   detail: (bugKey: string) => [...bugKeys.all, 'detail', bugKey] as const,
   activity: (bugKey: string) => [...bugKeys.all, 'activity', bugKey] as const,
+  /** Mutation key, so the live "bug deleted" event can tell our own delete from someone else's. */
+  deleteMutation: (bugId: string) => [...bugKeys.all, 'delete', bugId] as const,
 };
 
 /** The ticket grid: 50 rows at a time. Old rows stay visible while a new filter loads. */
@@ -118,6 +120,7 @@ export const useUpdateBug = (bug: BugDetail) => useBugMutation(bug, bugsApi.upda
 export function useDeleteBug(bug: BugDetail) {
   const queryClient = useQueryClient();
   return useMutation({
+    mutationKey: bugKeys.deleteMutation(bug.id),
     mutationFn: () => bugsApi.deleteBug(bug.id),
     onSuccess: () => {
       // Mark stale, don't remove: removing while the bug page is still mounted makes it refetch
