@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, type ReactNode } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers/auth-provider';
 import { routes, safeNextPath } from '@/config/routes';
 import { Logo } from '@/components/shared/logo';
@@ -25,14 +25,15 @@ function SessionPending() {
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { status } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     if (status === 'anonymous') {
-      const search = typeof window === 'undefined' ? '' : window.location.search;
+      // Read the URL here (browser only) rather than with usePathname(): this guard wraps dynamic
+      // routes like /projects/[projectId], whose path can't be known while prerendering.
+      const { pathname, search } = window.location;
       router.replace(`${routes.login}?next=${encodeURIComponent(pathname + search)}`);
     }
-  }, [status, router, pathname]);
+  }, [status, router]);
 
   return status === 'authenticated' ? children : <SessionPending />;
 }

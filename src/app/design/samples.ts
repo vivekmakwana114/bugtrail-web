@@ -6,17 +6,17 @@ import type { BugStatus, ProjectListItem } from '@/types/api';
  */
 
 const summary = (
-  reported: number,
-  ongoing: number,
-  failed: number,
-  resolved: number,
-  pass: number,
+  [reported, ongoing, failed, resolved, pass]: [number, number, number, number, number],
+  agedOpen = 0,
 ) => ({
   total: reported + ongoing + failed + resolved + pass,
   open: reported + ongoing + failed + resolved,
+  agedOpen,
   byStatus: { reported, ongoing, failed, resolved, pass },
   pie: { reported, ongoing: ongoing + failed, resolved: resolved + pass },
 });
+
+const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
 
 const project = (
   id: string,
@@ -24,6 +24,7 @@ const project = (
   key: string,
   memberCount: number,
   bugSummary: ReturnType<typeof summary>,
+  updatedMinutesAgo: number,
 ): ProjectListItem => ({
   id,
   name,
@@ -32,31 +33,20 @@ const project = (
   manager: null,
   memberCount,
   bugSummary,
-  updatedAt: '2026-10-12T09:00:00.000Z',
+  updatedAt: minutesAgo(updatedMinutesAgo),
 });
 
-export const SAMPLE_PROJECTS = [
-  {
-    project: project('p1', 'Checkout revamp', 'CHK', 7, summary(5, 3, 3, 4, 9)),
-    agedOpen: 2,
-    updatedLabel: '14m ago',
-  },
-  {
-    project: project('p2', 'Invennico HR portal', 'HRP', 5, summary(2, 3, 0, 6, 25)),
-    agedOpen: 0,
-    updatedLabel: '2h ago',
-  },
-  {
-    project: project(
-      'p3',
-      'Warehouse scanner app for Android handhelds',
-      'WSA',
-      3,
-      summary(0, 0, 0, 0, 0),
-    ),
-    agedOpen: 0,
-    updatedLabel: '3d ago',
-  },
+export const SAMPLE_PROJECTS: ProjectListItem[] = [
+  project('p1', 'Checkout revamp', 'CHK', 7, summary([5, 3, 3, 4, 9], 2), 14),
+  project('p2', 'Invennico HR portal', 'HRP', 5, summary([2, 3, 0, 6, 25]), 120),
+  project(
+    'p3',
+    'Warehouse scanner app for Android handhelds',
+    'WSA',
+    3,
+    summary([0, 0, 0, 0, 0]),
+    4320,
+  ),
 ];
 
 type SampleRow = {
