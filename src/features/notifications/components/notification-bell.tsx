@@ -1,15 +1,16 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Bell } from 'lucide-react';
 import { Popover } from 'radix-ui';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatRelative } from '@/lib/format';
-import { cn } from '@/lib/utils';
+import { routes } from '@/config/routes';
 import { useMarkAllRead, useMarkRead, useRecentNotifications, useUnreadCount } from '../hooks';
 import type { AppNotification } from '../types';
+import { NotificationItem } from './notification-item';
 
 /**
  * The bell in the top bar: unread count, and the latest notifications on click.
@@ -66,6 +67,15 @@ export function NotificationBell() {
             onOpen={openNotification}
             onRetry={() => recent.refetch()}
           />
+          <div className="border-t border-line px-3 py-2">
+            <Link
+              href={routes.notifications}
+              onClick={() => setOpen(false)}
+              className="text-sm font-medium text-ink underline-offset-2 hover:underline"
+            >
+              View all notifications
+            </Link>
+          </div>
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>
@@ -112,30 +122,7 @@ function NotificationList({ state, notifications, onOpen, onRetry }: Notificatio
   return (
     <ul className="max-h-96 overflow-y-auto py-1">
       {notifications.map((notification) => (
-        <li key={notification.id}>
-          <button
-            type="button"
-            onClick={() => onOpen(notification)}
-            className="grid w-full grid-cols-[0.5rem_1fr] gap-x-2.5 px-3 py-2 text-left hover:bg-sunken"
-          >
-            <span
-              aria-hidden
-              className={cn('mt-1.5 size-1.5 rounded-full', !notification.readAt && 'bg-ink')}
-            />
-            <span className="grid min-w-0 gap-0.5">
-              <span className={cn('text-sm', !notification.readAt && 'font-semibold')}>
-                {notification.title}
-                {!notification.readAt && <span className="sr-only"> (unread)</span>}
-              </span>
-              {notification.message && (
-                <span className="line-clamp-2 text-xs text-ink-2">{notification.message}</span>
-              )}
-              <span className="font-mono text-xs text-ink-3">
-                {formatRelative(notification.createdAt)}
-              </span>
-            </span>
-          </button>
-        </li>
+        <NotificationItem key={notification.id} notification={notification} onOpen={onOpen} />
       ))}
     </ul>
   );

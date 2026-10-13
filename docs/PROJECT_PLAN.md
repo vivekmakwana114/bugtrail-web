@@ -217,7 +217,7 @@ Reported → Ongoing → Resolved ──QA──► Pass
 
 ### Screens & flow
 
-- **Sidebar** (items shown by permission): Dashboard, Projects, Users, Roles, Notifications. The topbar has the notification bell and the profile menu.
+- **Sidebar** (items shown by permission; Notifications is everyone's): Dashboard, Projects, Users, Roles, Notifications. The topbar has the notification bell and the profile menu.
 - **Projects page (`/projects`):** a grid of project cards.
   - Each card shows the project name, with a box under it holding a **pie chart of Reported / Ongoing / Resolved** and the counts.
   - Pie mapping: **Reported** = reported, **Ongoing** = ongoing + failed (still being worked on), **Resolved** = resolved + pass.
@@ -239,7 +239,7 @@ Reported → Ongoing → Resolved ──QA──► Pass
 - **Bug detail (`/projects/[projectId]/bugs/[bugKey]`)**, in two columns:
   - **Left:** title, key, module, description, attachment links, status control (only allowed statuses, plus the "Send email" checkbox), assignee, fail count, age, time per status, activity timeline.
   - **Right: chat panel.** Realtime messages, load older messages on scroll, @mentions, edit/delete your own messages.
-- Users (with a pending-approval tab), Roles (read-only: what each of the four roles can do, from `GET /roles`, as a permission × role matrix; shown to Admin and PM via `user:read`), Notifications, Profile.
+- Users (with a pending-approval tab), Roles (read-only: what each of the four roles can do, from `GET /roles`, as a permission × role matrix; shown to Admin and PM via `user:read`), Notifications (everyone: All / Unread tabs, grouped by day, mark read, live; the bell links to it), Profile.
 
 ### Structure
 
