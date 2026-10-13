@@ -1,6 +1,10 @@
 'use client';
 
+import { useState } from 'react';
+import { Pencil } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { usePermission } from '@/components/auth/can';
 import { StatusGlyph } from '@/components/shared/status-glyph';
 import { StatusRing } from '@/components/shared/status-ring';
 import { DetailSection } from '@/components/templates/detail-page';
@@ -9,18 +13,30 @@ import { roleWithDesignation } from '@/config/roles';
 import { formatCount, formatRelative } from '@/lib/format';
 import type { ProjectDetail } from '@/types/api';
 import { PROJECT_STATUS_LABELS } from '../schemas';
+import { EditProjectDialog } from './edit-project-dialog';
 
 /**
- * The project's Overview tab: what it is, how its bugs stand, and who's on it.
- * (The page header, tabs and loading/error states live in ProjectPage.)
+ * The project's Overview tab: what it is, how its bugs stand, and who's on it. People who can
+ * edit projects (PM, Admin) get "Edit project" here: name, description, manager, status
+ * (archiving included). The page header, tabs and loading/error states live in ProjectPage.
  */
 export function ProjectOverviewTab({ project: p }: { project: ProjectDetail }) {
+  const canEdit = usePermission('project:update');
+  const [editing, setEditing] = useState(false);
   return (
     <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_24rem]">
       <div className="grid min-w-0 gap-5">
-        <p className={p.description ? 'max-w-prose text-md text-ink' : 'text-sm text-ink-3'}>
-          {p.description || 'No description yet.'}
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <p className={p.description ? 'max-w-prose text-md text-ink' : 'text-sm text-ink-3'}>
+            {p.description || 'No description yet.'}
+          </p>
+          {canEdit && (
+            <Button onClick={() => setEditing(true)}>
+              <Pencil aria-hidden />
+              Edit project
+            </Button>
+          )}
+        </div>
         <dl className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
           <Fact label="Status" value={PROJECT_STATUS_LABELS[p.status]} />
           <Fact label="Manager" value={p.manager?.name ?? 'Not set'} />
@@ -28,6 +44,7 @@ export function ProjectOverviewTab({ project: p }: { project: ProjectDetail }) {
         </dl>
         <BugOverview project={p} />
       </div>
+      {canEdit && <EditProjectDialog project={p} open={editing} onOpenChange={setEditing} />}
       <aside aria-label="Members" className="rounded-md border border-line bg-surface">
         <MemberList project={p} />
       </aside>

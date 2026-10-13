@@ -18,6 +18,7 @@ export const projectKeys = {
   list: (filters: { status?: ProjectStatus; search?: string }) =>
     [...projectKeys.lists(), filters] as const,
   detail: (projectId: string) => [...projectKeys.all, 'detail', projectId] as const,
+  managerCandidates: () => [...projectKeys.all, 'manager-candidates'] as const,
 };
 
 /**
@@ -39,6 +40,29 @@ export function useProject(projectId: string) {
   return useQuery({
     queryKey: projectKeys.detail(projectId),
     queryFn: () => projectsApi.getProject(projectId),
+  });
+}
+
+/** Who can be picked as manager in the edit dialog; only fetched while it's open. */
+export function useManagerCandidates(enabled: boolean) {
+  return useQuery({
+    queryKey: projectKeys.managerCandidates(),
+    queryFn: projectsApi.getManagerCandidates,
+    staleTime: 5 * 60_000,
+    enabled,
+  });
+}
+
+/** Save the edit dialog. The detail is replaced with the response; lists refetch (name, status). */
+export function useUpdateProject(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: Parameters<typeof projectsApi.updateProject>[1]) =>
+      projectsApi.updateProject(projectId, input),
+    onSuccess: (project) => {
+      queryClient.setQueryData(projectKeys.detail(projectId), project);
+      return queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+    },
   });
 }
 
