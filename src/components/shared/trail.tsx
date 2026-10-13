@@ -21,31 +21,39 @@ const MAX_DRAWN_LOOPS = 3;
 
 type MiniTrailProps = { status: BugStatus; failCount: number };
 
-/** 84×22: the stations filled up to where the ticket is, one small loop per QA fail. */
+/**
+ * Where each mini loop peaks (y), innermost first. Fixed heights rather than a formula so even
+ * the third loop stays inside the 24px box. More than three fails still draws three: the exact
+ * count is in the grid's Fails column right beside it.
+ */
+const MINI_LOOP_PEAKS = [11, 7.5, 4];
+
+/** 84×24: the stations filled up to where the ticket is, one small loop per QA fail (max 3). */
 export function MiniTrail({ status, failCount }: MiniTrailProps) {
   const position = stationIndex(status);
   const xs = [6, 30, 54, 78];
-  const y = 15;
+  const y = 17;
   const color = tone(status);
   const loops = Math.min(failCount, MAX_DRAWN_LOOPS);
 
   return (
     <svg
-      viewBox="0 0 84 22"
+      viewBox="0 0 84 24"
       width="84"
-      height="22"
+      height="24"
       role="img"
       aria-label={`${status}, ${failCount} ${failCount === 1 ? 'fail' : 'fails'}`}
       className="block"
     >
       <line x1="6" y1={y} x2="78" y2={y} stroke="var(--bt-line-strong)" strokeWidth="1.5" />
       <line x1="6" y1={y} x2={xs[position]} y2={y} stroke={color} strokeWidth="2" />
-      {Array.from({ length: loops }, (_, i) => {
-        const h = 5 + i * 2.6;
+      {MINI_LOOP_PEAKS.slice(0, loops).map((peak) => {
+        // A cubic peaks 3/4 of the way to its control points, so solve for the control height.
+        const control = y - 1 - (y - 1 - peak) / 0.75;
         return (
           <path
-            key={i}
-            d={`M54 ${y - 1} C 54 ${y - h - 4}, 30 ${y - h - 4}, 30 ${y - 1}`}
+            key={peak}
+            d={`M54 ${y - 1} C 54 ${control}, 30 ${control}, 30 ${y - 1}`}
             fill="none"
             stroke="var(--bt-failed)"
             strokeWidth="1.3"
@@ -66,18 +74,6 @@ export function MiniTrail({ status, failCount }: MiniTrailProps) {
           />
         );
       })}
-      {failCount > MAX_DRAWN_LOOPS && (
-        <text
-          x="42"
-          y="5"
-          fontSize="8"
-          textAnchor="middle"
-          fill="var(--bt-failed)"
-          className="font-mono"
-        >
-          +{failCount - MAX_DRAWN_LOOPS}
-        </text>
-      )}
     </svg>
   );
 }
@@ -146,9 +142,13 @@ export function TrailPath({ status, failCount, timeInStatus }: TrailPathProps) {
         )}
 
         {Array.from({ length: loops }, (_, i) => {
-          const a = X[2] - 8;
-          const b = X[1] + 8;
-          const control = y - 74 - i * 40;
+          // Loops nest like a rainbow: each one starts a step further right around Resolved's
+          // ring and lands a step further left around Ongoing's, so no two share an end or an
+          // arrowhead. Heights grow gently so the outermost label stays inside the drawing.
+          const spread = (i - 1) * 12;
+          const a = X[2] + spread;
+          const b = X[1] - spread;
+          const control = y - 8 - 70 - i * 26;
           // A cubic's midpoint sits 3/4 of the way to its control points: label just above it.
           const peak = y - 8 + 0.75 * (control - (y - 8));
           const outermost = i === loops - 1;
