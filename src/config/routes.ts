@@ -9,6 +9,7 @@ export const routes = {
   dashboard: '/dashboard',
   projects: '/projects',
   users: '/users',
+  roles: '/roles',
   project: (projectId: string) => `/projects/${projectId}`,
   bug: (projectId: string, bugKey: string) => `/projects/${projectId}/bugs/${bugKey}`,
 } as const;
