@@ -69,7 +69,7 @@ export function useCreateBug() {
       Promise.all([
         queryClient.invalidateQueries({ queryKey: bugKeys.lists() }),
         queryClient.invalidateQueries({ queryKey: bugKeys.modules(bug.project.id) }),
-        queryClient.invalidateQueries({ queryKey: projectKeys.detail(bug.project.id) }),
+        queryClient.invalidateQueries({ queryKey: projectKeys.detail(bug.project.key) }),
         queryClient.invalidateQueries({ queryKey: projectKeys.lists() }),
       ]),
   });
@@ -96,7 +96,7 @@ function onBugChanged(queryClient: QueryClient, bug: BugDetail) {
     queryClient.invalidateQueries({ queryKey: bugKeys.activity(bug.key) }),
     queryClient.invalidateQueries({ queryKey: bugKeys.lists() }),
     queryClient.invalidateQueries({ queryKey: bugKeys.modules(bug.project.id) }),
-    queryClient.invalidateQueries({ queryKey: projectKeys.detail(bug.project.id) }),
+    queryClient.invalidateQueries({ queryKey: projectKeys.detail(bug.project.key) }),
     queryClient.invalidateQueries({ queryKey: projectKeys.lists() }),
   ]);
 }
@@ -140,7 +140,7 @@ export function useDeleteBug(bug: BugDetail) {
         queryClient.invalidateQueries({ queryKey: bugKeys.detail(bug.key), refetchType: 'none' }),
         queryClient.invalidateQueries({ queryKey: bugKeys.activity(bug.key), refetchType: 'none' }),
         queryClient.invalidateQueries({ queryKey: bugKeys.lists() }),
-        queryClient.invalidateQueries({ queryKey: projectKeys.detail(bug.project.id) }),
+        queryClient.invalidateQueries({ queryKey: projectKeys.detail(bug.project.key) }),
         queryClient.invalidateQueries({ queryKey: projectKeys.lists() }),
       ]);
     },

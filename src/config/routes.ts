@@ -13,8 +13,9 @@ export const routes = {
   roles: '/roles',
   notifications: '/notifications',
   profile: '/profile',
-  project: (projectId: string) => `/projects/${projectId}`,
-  bug: (projectId: string, bugKey: string) => `/projects/${projectId}/bugs/${bugKey}`,
+  // Addressed by key (BT, BT-1), never by database id: ids stay out of the address bar.
+  project: (projectKey: string) => `/projects/${projectKey}`,
+  bug: (projectKey: string, bugKey: string) => `/projects/${projectKey}/bugs/${bugKey}`,
 } as const;
 
 /**

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
 import { useParams } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { ExternalLink, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -21,11 +22,12 @@ import { DetailPage, DetailSection } from '@/components/templates/detail-page';
 import { routes } from '@/config/routes';
 import { getErrorMessage, getErrorStatus } from '@/lib/api-client';
 import { formatDateTime, formatDuration, formatRelative } from '@/lib/format';
+import { useCanonicalUrl } from '@/lib/use-canonical-url';
 import { cn } from '@/lib/utils';
-import { useProject } from '@/features/projects/hooks';
+import { projectKeys, useProject } from '@/features/projects/hooks';
 import type { ProjectDetail } from '@/types/api';
 import { ChatPanel } from '@/features/chat/components/chat-panel';
-import { useBug, useProjectModules } from '../hooks';
+import { bugKeys, useBug, useProjectModules } from '../hooks';
 import { useBugRoom } from '../use-bug-room';
 import type { BugDetail } from '../types';
 import { ActivityPanel } from './bug-timeline';
@@ -38,13 +40,26 @@ const PANEL_HEIGHT = 'h-[28rem] lg:h-[36rem]';
 
 /**
  * One bug: where it is on its Trail and what can happen next (the band), what it is (facts, steps,
- * links), and what happened so far (timeline). Addressed by key: /projects/:id/bugs/CHK-142.
+ * links), and what happened so far (timeline). Addressed by keys: /projects/CHK/bugs/CHK-142.
  */
 export function BugPage() {
-  const { projectId, bugKey } = useParams<{ projectId: string; bugKey: string }>();
+  const { projectKey, bugKey } = useParams<{ projectKey: string; bugKey: string }>();
+  const queryClient = useQueryClient();
   const bug = useBug(bugKey);
   // Members (chat mentions) and archived status (read-only) come from the project, usually cached.
-  const project = useProject(projectId);
+  const project = useProject(projectKey);
+
+  // An old id link (/projects/<id>/bugs/CHK-1) or a lowercase key opens fine; then the address
+  // bar shows /projects/CHK/bugs/CHK-1, without re-mounting the page (see useCanonicalUrl).
+  useCanonicalUrl(
+    project.data && bug.data ? routes.bug(project.data.key, bug.data.key) : undefined,
+    () => {
+      if (project.data) {
+        queryClient.setQueryData(projectKeys.detail(project.data.key), project.data);
+      }
+      if (bug.data) queryClient.setQueryData(bugKeys.detail(bug.data.key), bug.data);
+    },
+  );
 
   if (bug.isPending || project.isPending) return <BugSkeleton />;
   if (bug.isError || project.isError) {
@@ -56,7 +71,7 @@ export function BugPage() {
         description="It doesn't exist, it was deleted, or it's in a project you're not a member of."
         action={
           <Button asChild size="sm">
-            <Link href={routes.project(projectId)}>Back to the project</Link>
+            <Link href={routes.project(projectKey)}>Back to the project</Link>
           </Button>
         }
       />
@@ -92,7 +107,7 @@ function BugView({ bug, project }: { bug: BugDetail; project: ProjectDetail }) {
               Projects
             </Link>{' '}
             /{' '}
-            <Link href={routes.project(project.id)} className="hover:text-ink">
+            <Link href={routes.project(project.key)} className="hover:text-ink">
               {project.key}
             </Link>{' '}
             / {bug.key}

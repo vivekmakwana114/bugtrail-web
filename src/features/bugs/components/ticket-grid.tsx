@@ -51,7 +51,7 @@ const COLUMNS: Column[] = [
     header: 'Title',
     cell: (b) => (
       <Link
-        href={routes.bug(b.project.id, b.key)}
+        href={routes.bug(b.project.key, b.key)}
         title={b.title}
         className="block max-w-64 truncate hover:underline"
       >
@@ -132,7 +132,7 @@ export function TicketGrid({ project }: { project: ProjectDetail }) {
 
   const openBug = (index: number) => {
     const bug = bugs[index];
-    if (bug) router.push(routes.bug(project.id, bug.key));
+    if (bug) router.push(routes.bug(project.key, bug.key));
   };
   const { cursor, setCursor } = useGridKeyboard({
     rowCount: bugs.length,

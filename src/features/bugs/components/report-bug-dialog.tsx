@@ -83,7 +83,7 @@ export function ReportBugDialog({ project, modules, open, onOpenChange }: Report
       });
       toast.success('Bug reported', {
         description: bug.assignee ? `${bug.key} · assigned to ${bug.assignee.name}` : bug.key,
-        action: { label: 'Open', onClick: () => router.push(routes.bug(project.id, bug.key)) },
+        action: { label: 'Open', onClick: () => router.push(routes.bug(project.key, bug.key)) },
       });
       close(false);
     } catch (error) {

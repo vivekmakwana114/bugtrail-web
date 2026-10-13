@@ -79,7 +79,7 @@ export function SlowestTickets({ scope, view, onViewChange }: SlowestTicketsProp
                 <TableCell className="font-mono whitespace-nowrap text-ink-2">{bug.key}</TableCell>
                 <TableCell>
                   <Link
-                    href={routes.bug(bug.project.id, bug.key)}
+                    href={routes.bug(bug.project.key, bug.key)}
                     title={bug.title}
                     className="block max-w-72 truncate hover:underline"
                   >

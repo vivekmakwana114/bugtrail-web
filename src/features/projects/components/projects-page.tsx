@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { usePermission } from '@/components/auth/can';
 import { ProjectCard } from '@/components/shared/project-card';
 import { ListPage, type ListState } from '@/components/templates/list-page';
+import { routes } from '@/config/routes';
 import { getErrorMessage, getErrorStatus } from '@/lib/api-client';
 import { formatCount } from '@/lib/format';
 import { useDebouncedValue } from '@/lib/use-debounced-value';
@@ -167,7 +168,7 @@ export function ProjectsPage() {
           aria-busy={list.isPlaceholderData}
         >
           {projects.map((project) => (
-            <ProjectCard key={project.id} project={project} href={`/projects/${project.id}`} />
+            <ProjectCard key={project.id} project={project} href={routes.project(project.key)} />
           ))}
         </div>
         {list.hasNextPage && (

@@ -17,7 +17,8 @@ export const projectKeys = {
   lists: () => [...projectKeys.all, 'list'] as const,
   list: (filters: { status?: ProjectStatus; search?: string }) =>
     [...projectKeys.lists(), filters] as const,
-  detail: (projectId: string) => [...projectKeys.all, 'detail', projectId] as const,
+  /** By project key (BT), the same value the URL carries. */
+  detail: (projectKey: string) => [...projectKeys.all, 'detail', projectKey] as const,
   managerCandidates: () => [...projectKeys.all, 'manager-candidates'] as const,
 };
 
@@ -36,10 +37,16 @@ export function useProjectList(filters: { status?: ProjectStatus; search?: strin
   });
 }
 
-export function useProject(projectId: string) {
+/**
+ * One project, addressed by its key from the URL (BT). An old-style id still loads (the API
+ * accepts both) and the page then rewrites the URL to the key. Keys are cached uppercase, so
+ * /projects/bt and /projects/BT share one cache entry, and every invalidation uses the key.
+ */
+export function useProject(projectRef: string) {
+  const ref = /^[0-9a-f]{24}$/i.test(projectRef) ? projectRef : projectRef.toUpperCase();
   return useQuery({
-    queryKey: projectKeys.detail(projectId),
-    queryFn: () => projectsApi.getProject(projectId),
+    queryKey: projectKeys.detail(ref),
+    queryFn: () => projectsApi.getProject(ref),
   });
 }
 
@@ -54,13 +61,13 @@ export function useManagerCandidates(enabled: boolean) {
 }
 
 /** Save the edit dialog. The detail is replaced with the response; lists refetch (name, status). */
-export function useUpdateProject(projectId: string) {
+export function useUpdateProject(target: { id: string; key: string }) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: Parameters<typeof projectsApi.updateProject>[1]) =>
-      projectsApi.updateProject(projectId, input),
+      projectsApi.updateProject(target.id, input),
     onSuccess: (project) => {
-      queryClient.setQueryData(projectKeys.detail(projectId), project);
+      queryClient.setQueryData(projectKeys.detail(target.key), project);
       return queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
     },
   });
@@ -71,7 +78,7 @@ export function useCreateProject() {
   return useMutation({
     mutationFn: projectsApi.createProject,
     onSuccess: (project) => {
-      queryClient.setQueryData(projectKeys.detail(project.id), project);
+      queryClient.setQueryData(projectKeys.detail(project.key), project);
       return queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
     },
   });

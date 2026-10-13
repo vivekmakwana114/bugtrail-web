@@ -59,7 +59,7 @@ type EditProjectDialogProps = {
  * if they aren't on the project yet, the API adds them as a member.
  */
 export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDialogProps) {
-  const updateProject = useUpdateProject(project.id);
+  const updateProject = useUpdateProject(project);
   const candidates = useManagerCandidates(open);
   const [formError, setFormError] = useState<string>();
   const {

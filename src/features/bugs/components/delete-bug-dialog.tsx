@@ -28,7 +28,7 @@ export function DeleteBugDialog({ bug, open, onOpenChange }: DeleteBugDialogProp
       onConfirm={async () => {
         await deleteBug.mutateAsync();
         toast.success(`${bug.key} deleted`);
-        router.replace(routes.project(bug.project.id));
+        router.replace(routes.project(bug.project.key));
       }}
     />
   );
