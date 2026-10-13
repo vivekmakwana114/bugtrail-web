@@ -128,9 +128,10 @@ export function ReportBugDialog({ project, modules, open, onOpenChange }: Report
     >
       <FormProvider {...form}>
         <BugTitleField />
+        <BugModuleField modules={modules} />
 
+        {/* Who and where, side by side. Without the status picker, Assignee keeps its half. */}
         <div className="grid gap-4 sm:grid-cols-2">
-          <BugModuleField modules={modules} />
           <Field id="bug-assignee" label="Assignee" error={errors.assignee?.message}>
             <Controller
               control={control}
@@ -150,29 +151,27 @@ export function ReportBugDialog({ project, modules, open, onOpenChange }: Report
               )}
             />
           </Field>
+          {canSetStatus && (
+            <Field
+              id="bug-status"
+              label="Status"
+              hint="Usually Reported. Pick another to log a bug that's already moving."
+            >
+              <Controller
+                control={control}
+                name="status"
+                render={({ field }) => (
+                  <Select
+                    id="bug-status"
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    options={statusOptions}
+                  />
+                )}
+              />
+            </Field>
+          )}
         </div>
-
-        {canSetStatus && (
-          <Field
-            id="bug-status"
-            label="Status"
-            hint="Usually Reported. Pick another to log a bug that's already moving."
-            className="sm:w-1/2 sm:pr-2"
-          >
-            <Controller
-              control={control}
-              name="status"
-              render={({ field }) => (
-                <Select
-                  id="bug-status"
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  options={statusOptions}
-                />
-              )}
-            />
-          </Field>
-        )}
 
         <BugDescriptionField />
         <BugLinksField />
