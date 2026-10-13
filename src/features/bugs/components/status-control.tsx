@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,10 +46,12 @@ type StatusControlProps = {
   readOnlyReason: string;
 };
 
-/** The bug's next moves, plus "Email reporter & assignee" for the notification they trigger. */
+/**
+ * The bug's next moves, one click each. These quick moves never email: to email the reporter and
+ * assignee about a status change, change it in the Edit form (decided 2026-10-13).
+ */
 export function StatusControl({ bug, readOnlyReason }: StatusControlProps) {
   const changeStatus = useChangeBugStatus(bug);
-  const [sendEmail, setSendEmail] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<BugStatus>();
 
   if (bug.allowedStatuses.length === 0) {
@@ -63,11 +64,10 @@ export function StatusControl({ bug, readOnlyReason }: StatusControlProps) {
   const move = async (status: BugStatus) => {
     setPendingStatus(status);
     try {
-      const updated = await changeStatus.mutateAsync({ status, sendEmail });
+      const updated = await changeStatus.mutateAsync({ status, sendEmail: false });
       toast.success(`${updated.key} is now ${STATUS_META[status].label}`, {
         description: status === 'failed' ? `Fail count: ${updated.failCount}` : undefined,
       });
-      setSendEmail(false);
     } catch (error) {
       toast.error(
         getErrorStatus(error) === 409 ? 'Someone else moved this bug first' : "Couldn't move it",
@@ -116,15 +116,6 @@ export function StatusControl({ bug, readOnlyReason }: StatusControlProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       )}
-      <label htmlFor="status-send-email" className="ml-1 inline-flex items-center gap-2 text-sm">
-        <Checkbox
-          id="status-send-email"
-          checked={sendEmail}
-          onCheckedChange={(checked) => setSendEmail(checked === true)}
-          disabled={busy}
-        />
-        Email reporter &amp; assignee
-      </label>
     </div>
   );
 }
