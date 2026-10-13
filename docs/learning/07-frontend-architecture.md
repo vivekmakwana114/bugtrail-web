@@ -262,3 +262,11 @@ The live preview needs the current name and link as you type. `watch()` from rea
 Admins and Project Managers land on the dashboard; Developers and QA on their projects. That rule lives in one function, `homePathFor(role)`, used by the three places that mean "home": the redirect after sign-in (`RedirectIfAuthenticated`, still the only place that navigates after sign-in), `/`, and the logo. `routes.home` was deleted rather than kept as a fallback, so nothing can quietly link to the old fixed page.
 
 `/` used to be a server `redirect()`. The server can't know your role: the session lives in the browser (the refresh cookie belongs to the API's domain). So `/` now renders `GoToHome`, which waits for the session check like the other guards and then replaces the URL. A `?next=` link still wins over the role's home, because the page someone was heading for matters more than the default. The test signs in as all four roles and checks the landing page, the logo, `/` and a reload for each.
+
+## Fixed after testing: Drive pictures
+
+### 50. A share link is a page, not a file
+
+A user pasted a Drive link shared with "Anyone with the link" as their picture, and saw initials. `curl` showed why: the share link returns `text/html` (Google's viewer page), and an `<img>` can't show a page. Google serves the file itself at other addresses, and measuring them mattered: `uc?export=view` returned the 6.4 MB original, while `lh3.googleusercontent.com/d/<id>=s256` returned a 28 KB JPEG with no redirect, the right size for an avatar shown in every list.
+
+`toImageUrl()` (`src/lib/image-url.ts`) turns a Drive file link into that address, and `Avatar` uses it when it renders. Converting at display time, not on save, means links people already saved start working, the stored value stays what they pasted (and recognise), and the rule lives in one place. `driveFileId()` parses with `URL` and checks the exact host, so `drive.google.com.evil.com` isn't treated as Drive. The address isn't officially documented by Google, so if it ever stops working, the initials fallback from note 46 catches it. Measure before you choose: the obvious "direct link" would have made every avatar a 6 MB download.
