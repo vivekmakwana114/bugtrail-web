@@ -232,3 +232,25 @@ The socket provider already invalidates `notificationKeys.all` when `notificatio
 ### 43. Reading width for reading screens
 
 The ticket grid and the users table use the full width because they have columns. Notifications are sentences: across 1,100px the eye travels too far from the end of one line to the start of the next. `max-w-3xl` on the page keeps lines readable, and the header's action stays aligned with the list's right edge. Choose width by what the content is, not by how wide the screen is.
+
+## Added with the profile page
+
+### 44. Changing a password replaces the session's tokens
+
+`POST /auth/change-password` deletes every refresh token you have (that's what signs out your other devices) and returns a new pair: the access token in the body, the refresh token as a new cookie. `changePassword()` stores the new access token right away; keeping the old one would work only until it expires and then fail on the next refresh. The test checks both sides: this tab keeps loading data and survives a reload, and a second browser signed in before the change is sent to sign in on its next reload.
+
+### 45. Pin the error to the field it's about
+
+"Current password is incorrect" comes from the API as a 400. Shown as a banner, it makes you work out which of three password fields is wrong. `setError('currentPassword', …, { shouldFocus: true })` puts it under that field and moves the cursor there. Rules the browser can check (new ≠ current, confirmation matches) are in the Zod schema, so they appear before any request.
+
+### 46. User-supplied images break; plan the fallback
+
+A picture link can point to a deleted file or to a Google Drive _share page_, which is HTML, not an image. `Avatar` now remembers which URL failed (`onError`) and shows initials instead of a broken-image icon. That's on every avatar in the app, not just the profile preview. It stores the failed URL rather than a "failed" flag, so pasting a new link gets a fresh try. The preview's hint says what initials mean in each case, and the field hint warns about Drive links before anyone tries one.
+
+### 47. After editing yourself, refresh what shows you
+
+Your name is in the top bar (the session user) and inside cached lists (members, users, bugs, chat). Saving calls `reloadUser()` for the first and `invalidateQueries()` for the rest. A broad invalidation is normally a smell, but profile edits are rare and you can appear almost anywhere. Tracking every query that includes a user would be more code for no visible gain. Only queries on screen refetch; the rest are just marked stale.
+
+### 48. `useWatch`, not `watch()`, with the React Compiler
+
+The live preview needs the current name and link as you type. `watch()` from react-hook-form reads the form's internal state in a way the React Compiler can't safely memoise, so lint warns and the compiler skips the component. `useWatch({ control, name })` subscribes properly, the same as the report-bug dialog. When lint says "Compilation Skipped", fix the cause instead of silencing it.

@@ -40,7 +40,24 @@ export const resetPasswordSchema = z
     message: "The passwords don't match.",
   });
 
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Enter your current password.'),
+    newPassword,
+    confirm: z.string().min(1, 'Type the new password again.'),
+  })
+  .refine((values) => values.newPassword === values.confirm, {
+    path: ['confirm'],
+    message: "The passwords don't match.",
+  })
+  // The API refuses this too; saying it here saves a round trip.
+  .refine((values) => values.newPassword !== values.currentPassword, {
+    path: ['newPassword'],
+    message: 'Choose a password different from your current one.',
+  });
+
 export type LoginValues = z.infer<typeof loginSchema>;
 export type RegisterValues = z.infer<typeof registerSchema>;
 export type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
+export type ChangePasswordValues = z.infer<typeof changePasswordSchema>;

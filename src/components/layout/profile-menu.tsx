@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { LogOut } from 'lucide-react';
+import { LogOut, UserRound } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -15,7 +15,7 @@ import { routes } from '@/config/routes';
 import { roleLabel } from '@/config/roles';
 import { useAuth } from '@/providers/auth-provider';
 
-/** Who you are, the theme switch, and sign out. Profile editing joins this menu later. */
+/** Who you are, your profile page, the theme switch, and sign out. */
 export function ProfileMenu() {
   const { user, signOut } = useAuth();
   const router = useRouter();
@@ -41,6 +41,10 @@ export function ProfileMenu() {
           <span className="truncate text-xs text-ink-3">{user.email}</span>
           <span className="text-xs text-ink-2">{roleLabel(user.role)}</span>
         </div>
+        <DropdownMenuItem onSelect={() => router.push(routes.profile)}>
+          <UserRound aria-hidden />
+          Profile
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <div className="grid gap-1.5 px-2 py-1.5">
           <span className="text-xs text-ink-3">Theme</span>
