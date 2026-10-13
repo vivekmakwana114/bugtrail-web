@@ -28,10 +28,13 @@ import { ChatPanel } from '@/features/chat/components/chat-panel';
 import { useBug, useProjectModules } from '../hooks';
 import { useBugRoom } from '../use-bug-room';
 import type { BugDetail } from '../types';
-import { BugTimeline } from './bug-timeline';
+import { ActivityPanel } from './bug-timeline';
 import { DeleteBugDialog } from './delete-bug-dialog';
 import { EditBugDialog } from './edit-bug-dialog';
 import { StatusControl } from './status-control';
+
+/** Activity and Chat share this height and scroll inside it. */
+const PANEL_HEIGHT = 'h-[28rem] lg:h-[36rem]';
 
 /**
  * One bug: where it is on its Trail and what can happen next (the band), what it is (facts, steps,
@@ -83,10 +86,6 @@ function BugView({ bug, project }: { bug: BugDetail; project: ProjectDetail }) {
   return (
     <>
       <DetailPage
-        asideLabel="Chat"
-        aside={
-          canReadChat && <ChatPanel bugId={bug.id} members={project.members} readOnly={!writable} />
-        }
         eyebrow={
           <>
             <Link href={routes.projects} className="hover:text-ink">
@@ -233,9 +232,18 @@ function BugView({ bug, project }: { bug: BugDetail; project: ProjectDetail }) {
           </DetailSection>
         )}
 
-        <DetailSection title="Activity">
-          <BugTimeline bugKey={bug.key} />
-        </DetailSection>
+        {/* Activity and Chat side by side, one height, each scrolling inside (2026-10-13). */}
+        <div className={cn('grid gap-5', canReadChat && 'lg:grid-cols-2')}>
+          <ActivityPanel bugKey={bug.key} className={PANEL_HEIGHT} />
+          {canReadChat && (
+            <aside
+              aria-label="Chat"
+              className={cn('min-w-0 rounded-md border border-line bg-surface', PANEL_HEIGHT)}
+            >
+              <ChatPanel bugId={bug.id} members={project.members} readOnly={!writable} />
+            </aside>
+          )}
+        </div>
       </DetailPage>
 
       {canEdit && (

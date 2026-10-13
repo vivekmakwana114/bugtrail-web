@@ -1,14 +1,74 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { getErrorMessage } from '@/lib/api-client';
 import { formatDateTime, formatRelative } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import { useBugActivity } from '../hooks';
 import type { BugActivityItem } from '../types';
+
+/** How close to the bottom (px) still counts as "reading the newest", i.e. keep following. */
+const PINNED_SLACK = 24;
+
+/**
+ * The timeline in a box of its own, set beside Chat with the same header and height. It scrolls
+ * inside, opens on the newest entry (the list is oldest first), and follows new entries only
+ * while you're at the bottom, so reading older history isn't interrupted by a live update.
+ */
+export function ActivityPanel({ bugKey, className }: { bugKey: string; className?: string }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const pinned = useRef(true);
+
+  useEffect(() => {
+    const scroller = scrollRef.current;
+    const content = contentRef.current;
+    if (!scroller || !content) return;
+    const onScroll = () => {
+      pinned.current =
+        scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < PINNED_SLACK;
+    };
+    // Content grows when the list loads and when live entries arrive: stay at the bottom then.
+    const observer = new ResizeObserver(() => {
+      if (pinned.current) scroller.scrollTop = scroller.scrollHeight;
+    });
+    scroller.addEventListener('scroll', onScroll, { passive: true });
+    observer.observe(content);
+    return () => {
+      scroller.removeEventListener('scroll', onScroll);
+      observer.disconnect();
+    };
+  }, []);
+
+  return (
+    // A plain box; the scrolling area below is the one named region, so it's announced once.
+    <div
+      className={cn('flex min-w-0 flex-col rounded-md border border-line bg-surface', className)}
+    >
+      <header className="flex items-center justify-between gap-2 border-b border-line px-3 py-2.5">
+        <h2 id="bug-activity-title" className="text-md font-semibold">
+          Activity
+        </h2>
+      </header>
+      {/* Focusable so keyboard users can scroll it too. */}
+      <div
+        ref={scrollRef}
+        tabIndex={0}
+        aria-labelledby="bug-activity-title"
+        role="region"
+        className="min-h-0 flex-1 overflow-y-auto p-3"
+      >
+        <div ref={contentRef}>
+          <BugTimeline bugKey={bugKey} />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /** What the API calls each editable field, in words. */
 const FIELD_NAMES: Record<string, string> = {

@@ -109,7 +109,8 @@ export function ChatPanel({ bugId, members, readOnly }: ChatPanelProps) {
       : '';
 
   return (
-    <div className="flex h-[70vh] flex-col lg:h-[calc(100vh-7rem)]">
+    // Fills its container: the bug page gives Chat and Activity one shared height.
+    <div className="flex h-full min-h-0 flex-col">
       <header className="flex items-center justify-between gap-2 border-b border-line px-3 py-2.5">
         <h2 className="text-md font-semibold">Chat</h2>
         <p className="sr-only" role="status">
