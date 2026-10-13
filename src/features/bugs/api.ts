@@ -1,5 +1,5 @@
 import { api } from '@/lib/api-client';
-import type { BugStatus, Page } from '@/types/api';
+import type { BugStatus, Page, UserSummary } from '@/types/api';
 import type {
   BugActivityItem,
   BugAttachment,
@@ -33,6 +33,15 @@ export async function getBugs(
 export async function getProjectModules(projectId: string): Promise<string[]> {
   const { data } = await api.get<{ modules: string[] }>(`/projects/${projectId}/modules`);
   return data.modules;
+}
+
+/**
+ * Everyone a bug can be assigned to: active users who can work on bugs, by name. Not limited to
+ * the project: assigning someone who isn't on it adds them as a member (the API does that).
+ */
+export async function getAssignableUsers(): Promise<UserSummary[]> {
+  const { data } = await api.get<{ users: UserSummary[] }>('/users/assignable');
+  return data.users;
 }
 
 export type CreateBugInput = {

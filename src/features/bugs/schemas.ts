@@ -50,6 +50,10 @@ export const reportBugSchema = bugContentSchema.extend({
 
 export type ReportBugValues = z.infer<typeof reportBugSchema>;
 
+/** The edit form has the same fields as the report form (content, assignee, status, email). */
+export const editBugSchema = reportBugSchema;
+export type EditBugValues = ReportBugValues;
+
 export const reportBugDefaults: ReportBugValues = {
   title: '',
   moduleName: '',

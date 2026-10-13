@@ -47,7 +47,7 @@ Status is shown as **colour + glyph**, never colour alone. Use `<StatusBadge sta
 
 - **Instrument Sans** (`font-sans`) for everything people read.
 - **IBM Plex Mono** (`font-mono`) for anything a machine produces: keys `CHK-142`, durations `6d 4h`, timestamps, counts. Mono gets tabular numbers automatically.
-- Scale: `text-xs` 12 · `text-sm` 13 · `text-md` 14 (body) · `text-lg` 16 · `text-xl` 20 (page title) · `text-2xl` 26 (at most once per screen).
+- Scale: `text-xs` 12.5 (12 until 2026-10-13) · `text-sm` 13 · `text-md` 14 (body) · `text-lg` 16 · `text-xl` 20 (page title) · `text-2xl` 26 (at most once per screen).
 - Hierarchy comes from size and weight, not from boxes.
 
 ## Shape and depth

@@ -44,7 +44,10 @@ export function flattenThread(
  * room broadcast), so both paths go through the same upsert keyed by id.
  */
 
-/** Replace the message if it's loaded, otherwise append it to the newest page. */
+/**
+ * Replace the message if it's loaded, otherwise add it to the newest page in time order. Sends
+ * can overlap, so their answers may arrive out of order: sorting keeps the thread chronological.
+ */
 export function upsertMessage(queryClient: QueryClient, message: ChatMessage) {
   queryClient.setQueryData<Thread>(chatKeys.messages(message.bugId), (thread) => {
     if (!thread) return thread;
@@ -55,7 +58,14 @@ export function upsertMessage(queryClient: QueryClient, message: ChatMessage) {
           messages: page.messages.map((m) => (m.id === message.id ? message : m)),
         }))
       : thread.pages.map((page, i) =>
-          i === 0 ? { ...page, messages: [...page.messages, message] } : page,
+          i === 0
+            ? {
+                ...page,
+                messages: [...page.messages, message].sort(
+                  (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+                ),
+              }
+            : page,
         );
     return { ...thread, pages };
   });

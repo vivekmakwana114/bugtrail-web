@@ -12,6 +12,7 @@ export async function login(input: { email: string; password: string }): Promise
 export async function register(input: {
   name: string;
   email: string;
+  designation: string;
   password: string;
 }): Promise<RegisterResponse> {
   const { data } = await api.post<RegisterResponse>('/auth/register', input);

@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Field } from '@/components/ui/field';
 import { Input, Textarea } from '@/components/ui/input';
 import { FormDialog } from '@/components/templates/form-dialog';
+import { routes } from '@/config/routes';
 import { getErrorMessage } from '@/lib/api-client';
 import { useCreateProject } from '../hooks';
 import { createProjectSchema, suggestProjectKey, type CreateProjectValues } from '../schemas';
@@ -52,7 +53,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
       const project = await createProject.mutateAsync(values);
       toast.success('Project created', { description: `${project.name} (${project.key})` });
       close(false);
-      router.push(`/projects/${project.id}`);
+      router.push(routes.project(project.key));
     } catch (error) {
       const message = getErrorMessage(error);
       // "Project key already taken" belongs next to the key field.

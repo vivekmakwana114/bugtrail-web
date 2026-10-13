@@ -40,7 +40,7 @@ export function UserActions({ user }: { user: UserListItem }) {
   if (canApprove && user.status === 'pending')
     items.push({ id: 'reject', label: 'Reject…', danger: true });
   if (canUpdate && (user.status === 'active' || user.status === 'suspended')) {
-    items.push({ id: 'change-role', label: 'Change role…' });
+    items.push({ id: 'change-role', label: 'Role & designation…' });
   }
   if (canApprove && user.status === 'suspended')
     items.push({ id: 'reactivate', label: 'Reactivate…' });

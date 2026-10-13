@@ -15,9 +15,9 @@ import { routes } from '@/config/routes';
 import { BUG_STATUSES, STATUS_META } from '@/config/statuses';
 import { getErrorMessage } from '@/lib/api-client';
 import type { ProjectDetail } from '@/types/api';
-import { useCreateBug } from '../hooks';
+import { useAssignableUsers, useCreateBug } from '../hooks';
 import { reportBugDefaults, reportBugSchema, type ReportBugValues } from '../schemas';
-import { assigneeOptions, UNASSIGNED } from './assignee-options';
+import { ASSIGNEE_HINT, assigneeOptions, UNASSIGNED } from './assignee-options';
 import {
   BugDescriptionField,
   BugLinksField,
@@ -48,6 +48,7 @@ export function ReportBugDialog({ project, modules, open, onOpenChange }: Report
   const router = useRouter();
   const createBug = useCreateBug();
   const canSetStatus = usePermission('bug:set_any_status');
+  const assignable = useAssignableUsers();
   const [formError, setFormError] = useState<string>();
   const form = useForm<ReportBugValues>({
     resolver: zodResolver(reportBugSchema),
@@ -82,7 +83,7 @@ export function ReportBugDialog({ project, modules, open, onOpenChange }: Report
       });
       toast.success('Bug reported', {
         description: bug.assignee ? `${bug.key} · assigned to ${bug.assignee.name}` : bug.key,
-        action: { label: 'Open', onClick: () => router.push(routes.bug(project.id, bug.key)) },
+        action: { label: 'Open', onClick: () => router.push(routes.bug(project.key, bug.key)) },
       });
       close(false);
     } catch (error) {
@@ -128,10 +129,16 @@ export function ReportBugDialog({ project, modules, open, onOpenChange }: Report
     >
       <FormProvider {...form}>
         <BugTitleField />
+        <BugModuleField modules={modules} />
 
+        {/* Who and where, side by side. Without the status picker, Assignee keeps its half. */}
         <div className="grid gap-4 sm:grid-cols-2">
-          <BugModuleField modules={modules} />
-          <Field id="bug-assignee" label="Assignee" error={errors.assignee?.message}>
+          <Field
+            id="bug-assignee"
+            label="Assignee"
+            hint={ASSIGNEE_HINT}
+            error={errors.assignee?.message}
+          >
             <Controller
               control={control}
               name="assignee"
@@ -144,35 +151,33 @@ export function ReportBugDialog({ project, modules, open, onOpenChange }: Report
                     field.onChange(next);
                     if (!next) setValue('sendEmail', false);
                   }}
-                  options={assigneeOptions(project.members)}
+                  options={assigneeOptions(assignable.data ?? [])}
                   aria-invalid={!!errors.assignee}
                 />
               )}
             />
           </Field>
+          {canSetStatus && (
+            <Field
+              id="bug-status"
+              label="Status"
+              hint="Usually Reported. Pick another to log a bug that's already moving."
+            >
+              <Controller
+                control={control}
+                name="status"
+                render={({ field }) => (
+                  <Select
+                    id="bug-status"
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    options={statusOptions}
+                  />
+                )}
+              />
+            </Field>
+          )}
         </div>
-
-        {canSetStatus && (
-          <Field
-            id="bug-status"
-            label="Status"
-            hint="Usually Reported. Pick another to log a bug that's already moving."
-            className="sm:w-1/2 sm:pr-2"
-          >
-            <Controller
-              control={control}
-              name="status"
-              render={({ field }) => (
-                <Select
-                  id="bug-status"
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  options={statusOptions}
-                />
-              )}
-            />
-          </Field>
-        )}
 
         <BugDescriptionField />
         <BugLinksField />

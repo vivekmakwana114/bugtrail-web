@@ -23,6 +23,8 @@ export const bugKeys = {
   /** The bug page is addressed by key (CHK-142), so its cache is too. */
   detail: (bugKey: string) => [...bugKeys.all, 'detail', bugKey] as const,
   activity: (bugKey: string) => [...bugKeys.all, 'activity', bugKey] as const,
+  /** Who bugs can be assigned to (not per project: see getAssignableUsers). */
+  assignable: () => [...bugKeys.all, 'assignable'] as const,
   /** Mutation key, so the live "bug deleted" event can tell our own delete from someone else's. */
   deleteMutation: (bugId: string) => [...bugKeys.all, 'delete', bugId] as const,
 };
@@ -46,6 +48,15 @@ export function useProjectModules(projectId: string) {
   });
 }
 
+/** The assignee pickers and the assignee filter. People change rarely: cached for a few minutes. */
+export function useAssignableUsers() {
+  return useQuery({
+    queryKey: bugKeys.assignable(),
+    queryFn: bugsApi.getAssignableUsers,
+    staleTime: 5 * 60_000,
+  });
+}
+
 /**
  * Report a bug. A new bug changes the grid, the project's counts (header, Overview, the projects
  * grid's cards) and maybe the module list, so all of those refetch.
@@ -58,7 +69,7 @@ export function useCreateBug() {
       Promise.all([
         queryClient.invalidateQueries({ queryKey: bugKeys.lists() }),
         queryClient.invalidateQueries({ queryKey: bugKeys.modules(bug.project.id) }),
-        queryClient.invalidateQueries({ queryKey: projectKeys.detail(bug.project.id) }),
+        queryClient.invalidateQueries({ queryKey: projectKeys.detail(bug.project.key) }),
         queryClient.invalidateQueries({ queryKey: projectKeys.lists() }),
       ]),
   });
@@ -85,7 +96,7 @@ function onBugChanged(queryClient: QueryClient, bug: BugDetail) {
     queryClient.invalidateQueries({ queryKey: bugKeys.activity(bug.key) }),
     queryClient.invalidateQueries({ queryKey: bugKeys.lists() }),
     queryClient.invalidateQueries({ queryKey: bugKeys.modules(bug.project.id) }),
-    queryClient.invalidateQueries({ queryKey: projectKeys.detail(bug.project.id) }),
+    queryClient.invalidateQueries({ queryKey: projectKeys.detail(bug.project.key) }),
     queryClient.invalidateQueries({ queryKey: projectKeys.lists() }),
   ]);
 }
@@ -129,7 +140,7 @@ export function useDeleteBug(bug: BugDetail) {
         queryClient.invalidateQueries({ queryKey: bugKeys.detail(bug.key), refetchType: 'none' }),
         queryClient.invalidateQueries({ queryKey: bugKeys.activity(bug.key), refetchType: 'none' }),
         queryClient.invalidateQueries({ queryKey: bugKeys.lists() }),
-        queryClient.invalidateQueries({ queryKey: projectKeys.detail(bug.project.id) }),
+        queryClient.invalidateQueries({ queryKey: projectKeys.detail(bug.project.key) }),
         queryClient.invalidateQueries({ queryKey: projectKeys.lists() }),
       ]);
     },

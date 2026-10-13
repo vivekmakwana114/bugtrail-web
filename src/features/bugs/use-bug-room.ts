@@ -35,7 +35,7 @@ export function useBugRoom(bug: BugDetail) {
       queryClient.invalidateQueries({ queryKey: bugKeys.detail(bug.key) }),
       queryClient.invalidateQueries({ queryKey: bugKeys.activity(bug.key) }),
       queryClient.invalidateQueries({ queryKey: bugKeys.lists() }),
-      queryClient.invalidateQueries({ queryKey: projectKeys.detail(bug.project.id) }),
+      queryClient.invalidateQueries({ queryKey: projectKeys.detail(bug.project.key) }),
     ]);
 
   const onBugUpdated = useEffectEvent((event: BugUpdatedEvent) => {
@@ -49,8 +49,8 @@ export function useBugRoom(bug: BugDetail) {
       // Someone else deleted it while we were looking: say so and go back to the project.
       toast.info(`${event.key} was deleted by someone else`);
       queryClient.invalidateQueries({ queryKey: bugKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: projectKeys.detail(bug.project.id) });
-      router.replace(routes.project(bug.project.id));
+      queryClient.invalidateQueries({ queryKey: projectKeys.detail(bug.project.key) });
+      router.replace(routes.project(bug.project.key));
       return;
     }
     // Our own change already put this exact version in the cache: nothing to fetch.

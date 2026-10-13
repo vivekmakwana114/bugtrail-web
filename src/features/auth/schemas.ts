@@ -22,9 +22,17 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Enter your password.'),
 });
 
+/** A person's job title next to their role ("MERN Developer"). Required at sign-up and add user. */
+export const designation = z
+  .string()
+  .trim()
+  .min(1, 'Enter your job title, e.g. MERN Developer.')
+  .max(100, 'Keep it under 100 characters.');
+
 export const registerSchema = z.object({
   name: z.string().trim().min(1, 'Enter your name.').max(100, 'Keep it under 100 characters.'),
   email,
+  designation,
   password: newPassword,
 });
 

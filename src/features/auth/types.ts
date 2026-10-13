@@ -10,6 +10,8 @@ export type SessionUser = {
   role: RoleKey | null;
   status: UserStatus;
   avatarUrl: string | null;
+  /** Free-text job title next to the role ("MERN Developer"); '' when not set. */
+  designation: string;
   /** permission keys from the role, e.g. "bug:create" (the API is still the one that enforces them) */
   permissions: string[];
   lastLoginAt: string | null;

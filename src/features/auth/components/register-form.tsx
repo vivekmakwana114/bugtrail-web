@@ -73,6 +73,19 @@ export function RegisterForm() {
           />
         </Field>
         <Field
+          id="designation"
+          label="Designation"
+          hint="Your job title, e.g. MERN Developer, Flutter Developer, Manual QA."
+          error={errors.designation?.message}
+        >
+          <Input
+            id="designation"
+            autoComplete="organization-title"
+            aria-invalid={!!errors.designation}
+            {...register('designation')}
+          />
+        </Field>
+        <Field
           id="password"
           label="Password"
           hint="At least 8 characters, with a letter and a number."

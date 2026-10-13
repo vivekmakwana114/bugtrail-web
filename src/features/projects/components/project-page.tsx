@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,24 +13,32 @@ import { routes } from '@/config/routes';
 import { TROUBLE_AGE_DAYS } from '@/config/statuses';
 import { getErrorMessage, getErrorStatus } from '@/lib/api-client';
 import { formatCount } from '@/lib/format';
+import { useCanonicalUrl } from '@/lib/use-canonical-url';
 import { TicketGrid } from '@/features/bugs/components/ticket-grid';
 import type { ProjectDetail } from '@/types/api';
-import { useProject } from '../hooks';
+import { projectKeys, useProject } from '../hooks';
 import { ProjectOverviewTab } from './project-overview-tab';
 
 type Tab = 'tickets' | 'overview';
 
 /**
  * A project: the ticket grid by default, and an Overview tab (description, bug counts, members).
- * The tab is in the URL (?tab=overview) so it survives a refresh and can be linked.
+ * Addressed by key (/projects/BT). The tab is in the URL (?tab=overview) so it survives a
+ * refresh and can be linked.
  */
 export function ProjectPage() {
-  const { projectId } = useParams<{ projectId: string }>();
+  const { projectKey } = useParams<{ projectKey: string }>();
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const project = useProject(projectId);
+  const project = useProject(projectKey);
   const tab: Tab = params.get('tab') === 'overview' ? 'overview' : 'tickets';
+
+  // An old id link or a lowercase key opens fine; then the address bar shows /projects/BT.
+  const queryClient = useQueryClient();
+  useCanonicalUrl(project.data && routes.project(project.data.key), () => {
+    if (project.data) queryClient.setQueryData(projectKeys.detail(project.data.key), project.data);
+  });
 
   const setTab = (next: string) => {
     // Grid filters only mean something on the Tickets tab, so switching starts clean.

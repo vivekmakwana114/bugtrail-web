@@ -11,6 +11,7 @@ import { StatusGlyph } from '@/components/shared/status-glyph';
 import { BUG_STATUSES, STATUS_META } from '@/config/statuses';
 import { cn } from '@/lib/utils';
 import type { BugStatus, UserSummary } from '@/types/api';
+import { useAssignableUsers } from '../hooks';
 import type { BugListFilters } from '../types';
 
 const ANY = 'any';
@@ -46,14 +47,20 @@ export function TicketFilters({
     onChange({ statuses: selected });
   };
 
+  // Everyone bugs can be assigned to (anyone can be, since assigning adds them to the project),
+  // plus the project's own members so someone since suspended can still be filtered by.
+  const assignable = useAssignableUsers();
+  const people = [
+    ...new Map([...(assignable.data ?? []), ...members].map((u) => [u.id, u])).values(),
+  ].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
   const assigneeOptions: SelectOption[] = [
     { value: ANY, label: 'Anyone' },
     { value: 'me', label: 'Assigned to me' },
     { value: 'none', label: 'Unassigned' },
-    ...members.map((member) => ({
-      value: member.id,
-      label: member.name,
-      icon: <Avatar name={member.name} src={member.avatarUrl} />,
+    ...people.map((person) => ({
+      value: person.id,
+      label: person.name,
+      icon: <Avatar name={person.name} src={person.avatarUrl} />,
     })),
   ];
   const moduleOptions: SelectOption[] = [

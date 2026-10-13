@@ -55,12 +55,16 @@ function useUserMutation<TInput>(request: (input: TInput) => Promise<void>) {
 
 export const useSetUserStatus = () =>
   useUserMutation((input: { userId: string } & Parameters<typeof usersApi.setUserStatus>[1]) =>
-    usersApi.setUserStatus(input.userId, { status: input.status, role: input.role }),
+    usersApi.setUserStatus(input.userId, {
+      status: input.status,
+      role: input.role,
+      designation: input.designation,
+    }),
   );
 export const useChangeUserRole = () =>
   useUserMutation(
-    (input: { userId: string; role: Parameters<typeof usersApi.changeUserRole>[1] }) =>
-      usersApi.changeUserRole(input.userId, input.role),
+    ({ userId, ...input }: { userId: string } & Parameters<typeof usersApi.changeUserRole>[1]) =>
+      usersApi.changeUserRole(userId, input),
   );
 export const useCreateUser = () => useUserMutation(usersApi.createUser);
 export const useDeleteUser = () => useUserMutation(usersApi.deleteUser);

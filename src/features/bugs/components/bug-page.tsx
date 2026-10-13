@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
 import { useParams } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { ExternalLink, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -21,28 +22,44 @@ import { DetailPage, DetailSection } from '@/components/templates/detail-page';
 import { routes } from '@/config/routes';
 import { getErrorMessage, getErrorStatus } from '@/lib/api-client';
 import { formatDateTime, formatDuration, formatRelative } from '@/lib/format';
+import { useCanonicalUrl } from '@/lib/use-canonical-url';
 import { cn } from '@/lib/utils';
-import { useProject } from '@/features/projects/hooks';
+import { projectKeys, useProject } from '@/features/projects/hooks';
 import type { ProjectDetail } from '@/types/api';
 import { ChatPanel } from '@/features/chat/components/chat-panel';
-import { useBug, useProjectModules } from '../hooks';
+import { bugKeys, useBug, useProjectModules } from '../hooks';
 import { useBugRoom } from '../use-bug-room';
 import type { BugDetail } from '../types';
-import { AssignBugDialog } from './assign-bug-dialog';
-import { BugTimeline } from './bug-timeline';
+import { ActivityPanel } from './bug-timeline';
 import { DeleteBugDialog } from './delete-bug-dialog';
 import { EditBugDialog } from './edit-bug-dialog';
 import { StatusControl } from './status-control';
 
+/** Activity and Chat share this height and scroll inside it. */
+const PANEL_HEIGHT = 'h-[28rem] lg:h-[36rem]';
+
 /**
  * One bug: where it is on its Trail and what can happen next (the band), what it is (facts, steps,
- * links), and what happened so far (timeline). Addressed by key: /projects/:id/bugs/CHK-142.
+ * links), and what happened so far (timeline). Addressed by keys: /projects/CHK/bugs/CHK-142.
  */
 export function BugPage() {
-  const { projectId, bugKey } = useParams<{ projectId: string; bugKey: string }>();
+  const { projectKey, bugKey } = useParams<{ projectKey: string; bugKey: string }>();
+  const queryClient = useQueryClient();
   const bug = useBug(bugKey);
-  // Members (assign) and archived status (read-only) come from the project, usually cached already.
-  const project = useProject(projectId);
+  // Members (chat mentions) and archived status (read-only) come from the project, usually cached.
+  const project = useProject(projectKey);
+
+  // An old id link (/projects/<id>/bugs/CHK-1) or a lowercase key opens fine; then the address
+  // bar shows /projects/CHK/bugs/CHK-1, without re-mounting the page (see useCanonicalUrl).
+  useCanonicalUrl(
+    project.data && bug.data ? routes.bug(project.data.key, bug.data.key) : undefined,
+    () => {
+      if (project.data) {
+        queryClient.setQueryData(projectKeys.detail(project.data.key), project.data);
+      }
+      if (bug.data) queryClient.setQueryData(bugKeys.detail(bug.data.key), bug.data);
+    },
+  );
 
   if (bug.isPending || project.isPending) return <BugSkeleton />;
   if (bug.isError || project.isError) {
@@ -54,7 +71,7 @@ export function BugPage() {
         description="It doesn't exist, it was deleted, or it's in a project you're not a member of."
         action={
           <Button asChild size="sm">
-            <Link href={routes.project(projectId)}>Back to the project</Link>
+            <Link href={routes.project(projectKey)}>Back to the project</Link>
           </Button>
         }
       />
@@ -73,10 +90,9 @@ function BugView({ bug, project }: { bug: BugDetail; project: ProjectDetail }) {
   const modules = useProjectModules(project.id);
   const writable = project.status !== 'archived';
   const canEdit = usePermission('bug:update') && writable;
-  const canAssign = usePermission('bug:assign') && writable;
   const canDelete = usePermission('bug:delete');
   const canReadChat = usePermission('chat:read');
-  const [dialog, setDialog] = useState<'edit' | 'assign' | 'delete' | null>(null);
+  const [dialog, setDialog] = useState<'edit' | 'delete' | null>(null);
   const openDialog = (name: typeof dialog) => () => setDialog(name);
   const onDialogChange = (open: boolean) => !open && setDialog(null);
   // Live: other people's status moves, edits and messages show up without a refresh.
@@ -85,17 +101,13 @@ function BugView({ bug, project }: { bug: BugDetail; project: ProjectDetail }) {
   return (
     <>
       <DetailPage
-        asideLabel="Chat"
-        aside={
-          canReadChat && <ChatPanel bugId={bug.id} members={project.members} readOnly={!writable} />
-        }
         eyebrow={
           <>
             <Link href={routes.projects} className="hover:text-ink">
               Projects
             </Link>{' '}
             /{' '}
-            <Link href={routes.project(project.id)} className="hover:text-ink">
+            <Link href={routes.project(project.key)} className="hover:text-ink">
               {project.key}
             </Link>{' '}
             / {bug.key}
@@ -155,22 +167,16 @@ function BugView({ bug, project }: { bug: BugDetail; project: ProjectDetail }) {
         }
       >
         <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm sm:grid-cols-3">
+          {/* Read-only: assigning happens in the report and edit forms (decided 2026-10-13). */}
           <Fact label="Assignee">
-            <span className="flex flex-wrap items-center gap-2">
-              {bug.assignee ? (
-                <span className="inline-flex min-w-0 items-center gap-2">
-                  <Avatar name={bug.assignee.name} src={bug.assignee.avatarUrl} />
-                  <span className="truncate">{bug.assignee.name}</span>
-                </span>
-              ) : (
-                <span className="text-ink-3">Unassigned</span>
-              )}
-              {canAssign && (
-                <Button size="sm" variant="ghost" onClick={openDialog('assign')}>
-                  {bug.assignee ? 'Change' : 'Assign'}
-                </Button>
-              )}
-            </span>
+            {bug.assignee ? (
+              <span className="inline-flex min-w-0 items-center gap-2">
+                <Avatar name={bug.assignee.name} src={bug.assignee.avatarUrl} />
+                <span className="truncate">{bug.assignee.name}</span>
+              </span>
+            ) : (
+              <span className="text-ink-3">Unassigned</span>
+            )}
           </Fact>
           <Fact label="Module">{bug.moduleName}</Fact>
           <Fact label="Reporter">
@@ -193,7 +199,7 @@ function BugView({ bug, project }: { bug: BugDetail; project: ProjectDetail }) {
               {bug.failCount}
             </span>
           </Fact>
-          <Fact label={bug.passedAt ? 'Took' : 'Age'}>
+          <Fact label={bug.passedAt ? 'Time Taken' : 'Age'}>
             <span className="font-mono">{formatDuration(bug.ageMs)}</span>
           </Fact>
           <Fact label="Reported">
@@ -241,9 +247,20 @@ function BugView({ bug, project }: { bug: BugDetail; project: ProjectDetail }) {
           </DetailSection>
         )}
 
-        <DetailSection title="Activity">
-          <BugTimeline bugKey={bug.key} />
-        </DetailSection>
+        {/* Activity and Chat side by side, one height, each scrolling inside. 60/40, because an
+            activity row ("Admin moved it from Ongoing to Resolved · 2h ago") needs the width to
+            stay on one line, while chat bubbles wrap fine (2026-10-13). */}
+        <div className={cn('grid gap-5', canReadChat && 'lg:grid-cols-[3fr_2fr]')}>
+          <ActivityPanel bugKey={bug.key} className={PANEL_HEIGHT} />
+          {canReadChat && (
+            <aside
+              aria-label="Chat"
+              className={cn('min-w-0 rounded-md border border-line bg-surface', PANEL_HEIGHT)}
+            >
+              <ChatPanel bugId={bug.id} members={project.members} readOnly={!writable} />
+            </aside>
+          )}
+        </div>
       </DetailPage>
 
       {canEdit && (
@@ -251,14 +268,6 @@ function BugView({ bug, project }: { bug: BugDetail; project: ProjectDetail }) {
           bug={bug}
           modules={modules.data ?? []}
           open={dialog === 'edit'}
-          onOpenChange={onDialogChange}
-        />
-      )}
-      {canAssign && (
-        <AssignBugDialog
-          bug={bug}
-          members={project.members}
-          open={dialog === 'assign'}
           onOpenChange={onDialogChange}
         />
       )}
@@ -281,7 +290,7 @@ function readOnlyReason(bug: BugDetail, project: ProjectDetail): string {
 function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="grid min-w-0 content-start gap-1">
-      <dt className="text-xs font-medium text-ink-3">{label}</dt>
+      <dt className="text-sm font-medium text-ink-3">{label}</dt>
       <dd className="min-w-0">{children}</dd>
     </div>
   );

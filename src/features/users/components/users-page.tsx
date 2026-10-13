@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePermission } from '@/components/auth/can';
 import { PageHeader } from '@/components/shared/page-header';
 import { EmptyState, ErrorState, NoAccessState } from '@/components/shared/states';
-import { roleLabel, ROLE_LABELS } from '@/config/roles';
+import { roleWithDesignation, ROLE_LABELS } from '@/config/roles';
 import { getErrorMessage, getErrorStatus } from '@/lib/api-client';
 import { formatCount, formatDateTime, formatRelative } from '@/lib/format';
 import { useAuth } from '@/providers/auth-provider';
@@ -192,7 +192,7 @@ function AllUsers({ state }: { state: ReturnType<typeof useUsersUrlState> }) {
                   <UserCell user={user} isMe={user.id === me?.id} />
                 </TableCell>
                 <TableCell className={user.role ? 'whitespace-nowrap' : 'text-ink-3'}>
-                  {roleLabel(user.role)}
+                  {roleWithDesignation(user.role, user.designation)}
                 </TableCell>
                 <TableCell>
                   <UserStatusBadge status={user.status} />

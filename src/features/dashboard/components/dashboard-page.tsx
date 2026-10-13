@@ -33,7 +33,7 @@ export function DashboardPage() {
     queryFn: () => getProjects({ limit: 100 }),
     staleTime: 5 * 60_000,
   });
-  const projectName = projects.data?.results.find((p) => p.id === projectId)?.name;
+  const projectName = projects.data?.results.find((p) => p.key === projectId)?.name;
 
   const scopeLine = [
     projectId ? (projectName ?? 'One project') : 'All your projects',
@@ -55,7 +55,7 @@ export function DashboardPage() {
               options={[
                 { value: ALL_PROJECTS, label: 'All my projects' },
                 ...(projects.data?.results ?? []).map((p) => ({
-                  value: p.id,
+                  value: p.key,
                   label: `${p.name} (${p.key})`,
                 })),
               ]}
