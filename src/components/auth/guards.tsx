@@ -3,7 +3,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers/auth-provider';
-import { routes, safeNextPath } from '@/config/routes';
+import { homePathFor, routes, safeNextPath } from '@/config/routes';
 import { Logo } from '@/components/shared/logo';
 
 /**
@@ -40,19 +40,37 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
 /**
  * For login/register/forgot-password: once signed in (already, or by submitting the form), go
- * to the page the user was heading for (?next=), or the home page. This is the ONLY place that
- * navigates after sign-in, so the form just signs in and this follows.
+ * to the page the user was heading for (?next=), or their home page (by role). This is the ONLY
+ * place that navigates after sign-in, so the form just signs in and this follows.
  */
 export function RedirectIfAuthenticated({ children }: { children: ReactNode }) {
-  const { status } = useAuth();
+  const { status, user } = useAuth();
   const router = useRouter();
+  const role = user?.role ?? null;
 
   useEffect(() => {
     if (status === 'authenticated') {
       const next = new URLSearchParams(window.location.search).get('next');
-      router.replace(safeNextPath(next));
+      router.replace(safeNextPath(next, homePathFor(role)));
     }
-  }, [status, router]);
+  }, [status, role, router]);
 
   return status === 'anonymous' ? children : <SessionPending />;
+}
+
+/**
+ * For "/", which has no page of its own. Home depends on the role, and only the browser knows
+ * the session, so this waits for it: signed in → your home page, signed out → sign in.
+ */
+export function GoToHome() {
+  const { status, user } = useAuth();
+  const router = useRouter();
+  const role = user?.role ?? null;
+
+  useEffect(() => {
+    if (status === 'authenticated') router.replace(homePathFor(role));
+    if (status === 'anonymous') router.replace(routes.login);
+  }, [status, role, router]);
+
+  return <SessionPending />;
 }

@@ -254,3 +254,11 @@ Your name is in the top bar (the session user) and inside cached lists (members,
 ### 48. `useWatch`, not `watch()`, with the React Compiler
 
 The live preview needs the current name and link as you type. `watch()` from react-hook-form reads the form's internal state in a way the React Compiler can't safely memoise, so lint warns and the compiler skips the component. `useWatch({ control, name })` subscribes properly, the same as the report-bug dialog. When lint says "Compilation Skipped", fix the cause instead of silencing it.
+
+## Added with the role-based landing page
+
+### 49. One rule for "home", and only the browser can apply it
+
+Admins and Project Managers land on the dashboard; Developers and QA on their projects. That rule lives in one function, `homePathFor(role)`, used by the three places that mean "home": the redirect after sign-in (`RedirectIfAuthenticated`, still the only place that navigates after sign-in), `/`, and the logo. `routes.home` was deleted rather than kept as a fallback, so nothing can quietly link to the old fixed page.
+
+`/` used to be a server `redirect()`. The server can't know your role: the session lives in the browser (the refresh cookie belongs to the API's domain). So `/` now renders `GoToHome`, which waits for the session check like the other guards and then replaces the URL. A `?next=` link still wins over the role's home, because the page someone was heading for matters more than the default. The test signs in as all four roles and checks the landing page, the logo, `/` and a reload for each.

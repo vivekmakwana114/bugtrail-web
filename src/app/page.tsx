@@ -1,7 +1,9 @@
-import { redirect } from 'next/navigation';
-import { routes } from '@/config/routes';
+import { GoToHome } from '@/components/auth/guards';
 
-/** "/" has no page of its own: the panel guard sends signed-out users on to /login. */
+// Decided in the browser after the session check: see GoToHome.
+export const instant = false;
+
+/** "/" has no page of its own: it sends you to your home page (by role), or to sign in. */
 export default function Home() {
-  redirect(routes.home);
+  return <GoToHome />;
 }
