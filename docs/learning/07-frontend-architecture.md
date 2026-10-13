@@ -200,3 +200,17 @@ On a phone the users page scrolled sideways by 303px although the table sits in 
 ### 36. Features meet: live updates and delete
 
 Deleting a bug broadcasts "deleted" to everyone viewing it, including you, and the page refetched the bug it had just deleted (two 404s). The delete mutation now has a `mutationKey`; the live handler checks the mutation cache, ignores your own delete, and for anyone else's shows "CHK-6 was deleted by someone else" and goes back to the project. Rerun older end-to-end tests after adding cross-cutting behaviour like live updates: one old "stale page" test also had to change, because the page no longer stays stale.
+
+## Added with the roles screen
+
+### 37. Data that only changes on deploy: `staleTime: Infinity`
+
+The role catalog is code in the API (`src/config/roles.js`), so it can't change while the app is open; a deploy reloads the app anyway. `useAccessCatalog` sets `staleTime: Infinity`: one request per session, none on refocus or when you come back to the page (the test counts requests to prove it). Pick `staleTime` by asking "how often can this really change?", not by habit. The same reasoning is why the screen reads labels from `GET /roles` instead of the web's `ROLE_DESCRIPTIONS`: the server is the one place they're defined, so the screen can't drift from what the API enforces.
+
+### 38. A matrix is a table with two kinds of header
+
+Each permission row starts with `<th scope="row">`, each role column with `<th scope="col">`, and each group gets its own `<tbody>` headed by `<th scope="rowgroup">`. With that, a screen reader announces a cell as "Assign bugs, QA, Yes" (the hidden Yes/No is the cell's text; the tick and dash are `aria-hidden` decoration). On a phone the permission column is `sticky left-0` with a solid background, so the roles scroll under it inside the table frame. The group label sits in a full-width cell, so the label itself (a `span`) is the sticky part.
+
+### 39. Hiding a screen isn't protecting it
+
+`GET /roles` is open to any signed-in user: it's labels, not data. The screen is shown only to roles with `user:read` because it's for the people who assign roles. A developer who types `/roles` gets the no-access state and the query is `enabled: false`, so nothing is fetched. That's a UI choice, not security; anything actually secret is guarded by the API, never by hiding a page.
