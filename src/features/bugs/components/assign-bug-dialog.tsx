@@ -7,21 +7,20 @@ import { Field } from '@/components/ui/field';
 import { Select } from '@/components/ui/select';
 import { FormDialog } from '@/components/templates/form-dialog';
 import { getErrorMessage, getErrorStatus } from '@/lib/api-client';
-import type { UserSummary } from '@/types/api';
-import { useAssignBug } from '../hooks';
+import { useAssignableUsers, useAssignBug } from '../hooks';
 import type { BugDetail } from '../types';
-import { assigneeOptions, UNASSIGNED } from './assignee-options';
+import { ASSIGNEE_HINT, assigneeOptions, UNASSIGNED } from './assignee-options';
 
 type AssignBugDialogProps = {
   bug: BugDetail;
-  members: UserSummary[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
 
 /** Change who works on the bug (bug:assign). The new assignee is notified; email is opt-in. */
-export function AssignBugDialog({ bug, members, open, onOpenChange }: AssignBugDialogProps) {
+export function AssignBugDialog({ bug, open, onOpenChange }: AssignBugDialogProps) {
   const assignBug = useAssignBug(bug);
+  const assignable = useAssignableUsers();
   const current = bug.assignee?.id ?? UNASSIGNED;
   // undefined = not picked yet: show whoever has the bug now (even if that changed meanwhile).
   const [picked, setPicked] = useState<string>();
@@ -82,12 +81,12 @@ export function AssignBugDialog({ bug, members, open, onOpenChange }: AssignBugD
       }
       onSubmit={onSubmit}
     >
-      <Field id="assign-to" label="Assignee">
+      <Field id="assign-to" label="Assignee" hint={ASSIGNEE_HINT}>
         <Select
           id="assign-to"
           value={choice}
           onValueChange={setPicked}
-          options={assigneeOptions(members)}
+          options={assigneeOptions(assignable.data ?? [])}
         />
       </Field>
     </FormDialog>

@@ -23,6 +23,8 @@ export const bugKeys = {
   /** The bug page is addressed by key (CHK-142), so its cache is too. */
   detail: (bugKey: string) => [...bugKeys.all, 'detail', bugKey] as const,
   activity: (bugKey: string) => [...bugKeys.all, 'activity', bugKey] as const,
+  /** Who bugs can be assigned to (not per project: see getAssignableUsers). */
+  assignable: () => [...bugKeys.all, 'assignable'] as const,
   /** Mutation key, so the live "bug deleted" event can tell our own delete from someone else's. */
   deleteMutation: (bugId: string) => [...bugKeys.all, 'delete', bugId] as const,
 };
@@ -42,6 +44,15 @@ export function useProjectModules(projectId: string) {
   return useQuery({
     queryKey: bugKeys.modules(projectId),
     queryFn: () => bugsApi.getProjectModules(projectId),
+    staleTime: 5 * 60_000,
+  });
+}
+
+/** The assignee pickers and the assignee filter. People change rarely: cached for a few minutes. */
+export function useAssignableUsers() {
+  return useQuery({
+    queryKey: bugKeys.assignable(),
+    queryFn: bugsApi.getAssignableUsers,
     staleTime: 5 * 60_000,
   });
 }

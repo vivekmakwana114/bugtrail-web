@@ -15,9 +15,9 @@ import { routes } from '@/config/routes';
 import { BUG_STATUSES, STATUS_META } from '@/config/statuses';
 import { getErrorMessage } from '@/lib/api-client';
 import type { ProjectDetail } from '@/types/api';
-import { useCreateBug } from '../hooks';
+import { useAssignableUsers, useCreateBug } from '../hooks';
 import { reportBugDefaults, reportBugSchema, type ReportBugValues } from '../schemas';
-import { assigneeOptions, UNASSIGNED } from './assignee-options';
+import { ASSIGNEE_HINT, assigneeOptions, UNASSIGNED } from './assignee-options';
 import {
   BugDescriptionField,
   BugLinksField,
@@ -48,6 +48,7 @@ export function ReportBugDialog({ project, modules, open, onOpenChange }: Report
   const router = useRouter();
   const createBug = useCreateBug();
   const canSetStatus = usePermission('bug:set_any_status');
+  const assignable = useAssignableUsers();
   const [formError, setFormError] = useState<string>();
   const form = useForm<ReportBugValues>({
     resolver: zodResolver(reportBugSchema),
@@ -132,7 +133,12 @@ export function ReportBugDialog({ project, modules, open, onOpenChange }: Report
 
         {/* Who and where, side by side. Without the status picker, Assignee keeps its half. */}
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field id="bug-assignee" label="Assignee" error={errors.assignee?.message}>
+          <Field
+            id="bug-assignee"
+            label="Assignee"
+            hint={ASSIGNEE_HINT}
+            error={errors.assignee?.message}
+          >
             <Controller
               control={control}
               name="assignee"
@@ -145,7 +151,7 @@ export function ReportBugDialog({ project, modules, open, onOpenChange }: Report
                     field.onChange(next);
                     if (!next) setValue('sendEmail', false);
                   }}
-                  options={assigneeOptions(project.members)}
+                  options={assigneeOptions(assignable.data ?? [])}
                   aria-invalid={!!errors.assignee}
                 />
               )}

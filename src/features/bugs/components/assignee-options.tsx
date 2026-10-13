@@ -6,18 +6,19 @@ import type { UserSummary } from '@/types/api';
 export const UNASSIGNED = 'none';
 
 /**
- * Who a bug can be assigned to: active project members with a role (every role has bug:progress,
- * which the API requires). Pending or suspended accounts can't be assigned.
+ * Who a bug can be assigned to, from GET /users/assignable (useAssignableUsers): active users who
+ * can work on bugs, on the project or not. Assigning someone who isn't on it adds them.
  */
-export function assigneeOptions(members: UserSummary[]): SelectOption[] {
+export function assigneeOptions(users: UserSummary[]): SelectOption[] {
   return [
     { value: UNASSIGNED, label: 'Unassigned' },
-    ...members
-      .filter((member) => member.status === 'active' && member.role)
-      .map((member) => ({
-        value: member.id,
-        label: member.name,
-        icon: <Avatar name={member.name} src={member.avatarUrl} />,
-      })),
+    ...users.map((user) => ({
+      value: user.id,
+      label: user.name,
+      icon: <Avatar name={user.name} src={user.avatarUrl} />,
+    })),
   ];
 }
+
+/** Under an assignee picker: assigning isn't limited to the project's current members. */
+export const ASSIGNEE_HINT = 'Not on this project yet? Assigning them adds them to it.';

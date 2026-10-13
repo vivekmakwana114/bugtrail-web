@@ -255,12 +255,7 @@ function BugView({ bug, project }: { bug: BugDetail; project: ProjectDetail }) {
         />
       )}
       {canAssign && (
-        <AssignBugDialog
-          bug={bug}
-          members={project.members}
-          open={dialog === 'assign'}
-          onOpenChange={onDialogChange}
-        />
+        <AssignBugDialog bug={bug} open={dialog === 'assign'} onOpenChange={onDialogChange} />
       )}
       {canDelete && (
         <DeleteBugDialog bug={bug} open={dialog === 'delete'} onOpenChange={onDialogChange} />
