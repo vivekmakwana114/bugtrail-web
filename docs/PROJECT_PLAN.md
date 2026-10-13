@@ -217,7 +217,7 @@ Reported → Ongoing → Resolved ──QA──► Pass
 
 ### Screens & flow
 
-- **Sidebar** (items shown by permission; Notifications is everyone's): Dashboard, Projects, Users, Roles, Notifications. The topbar has the notification bell and the profile menu.
+- **Sidebar** (items shown by permission; Notifications is everyone's): Dashboard, Projects, Users, Roles, Notifications. The topbar has the notification bell and the profile menu. After sign-in (and from `/` or the logo), Admin and Project Manager land on the Dashboard, Developer and QA on Projects (`homePathFor` in `src/config/routes.ts`, decided 2026-10-13).
 - **Projects page (`/projects`):** a grid of project cards.
   - Each card shows the project name, with a box under it holding a **pie chart of Reported / Ongoing / Resolved** and the counts.
   - Pie mapping: **Reported** = reported, **Ongoing** = ongoing + failed (still being worked on), **Resolved** = resolved + pass.

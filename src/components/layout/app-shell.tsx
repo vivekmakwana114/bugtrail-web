@@ -1,8 +1,7 @@
-import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { Logo } from '@/components/shared/logo';
-import { routes } from '@/config/routes';
 import { NotificationBell } from '@/features/notifications/components/notification-bell';
+import { HomeLink } from './home-link';
 import { MobileNav } from './mobile-nav';
 import { ProfileMenu } from './profile-menu';
 import { SidebarNav } from './sidebar-nav';
@@ -23,18 +22,18 @@ export function AppShell({ children }: { children: ReactNode }) {
       </a>
 
       <aside className="sticky top-0 hidden h-dvh w-58 shrink-0 flex-col gap-6 border-r border-line bg-surface px-3 py-4 lg:flex">
-        <Link href={routes.home} className="px-1.5" aria-label="BugTrail home">
+        <HomeLink className="px-1.5">
           <Logo />
-        </Link>
+        </HomeLink>
         <SidebarNav />
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-12 items-center gap-2 border-b border-line bg-bg px-4 lg:px-8">
           <MobileNav />
-          <Link href={routes.home} className="lg:hidden" aria-label="BugTrail home">
+          <HomeLink className="lg:hidden">
             <Logo withWordmark={false} />
-          </Link>
+          </HomeLink>
           <div className="ml-auto flex items-center gap-1">
             <NotificationBell />
             <ProfileMenu />
