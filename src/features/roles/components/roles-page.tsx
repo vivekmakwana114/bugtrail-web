@@ -43,8 +43,8 @@ export function RolesPage() {
       title="Roles"
       description={
         <>
-          What each role can do. Roles are set in code, so everyone with a role has exactly the
-          same access. To change someone&apos;s role, go to{' '}
+          What each role can do. Roles are set in code, so everyone with a role has exactly the same
+          access. To change someone&apos;s role, go to{' '}
           <Link
             href={routes.users}
             className="font-medium text-ink underline underline-offset-2 hover:no-underline"
