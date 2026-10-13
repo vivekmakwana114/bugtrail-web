@@ -17,6 +17,9 @@ const tone = (status: BugStatus) => `var(--bt-${status})`;
 
 const MAX_DRAWN_LOOPS = 3;
 
+/** Distance from a large-trail station's centre to the outer edge of its ring (r 8 + stroke 3 / 2). */
+const RING_TOP = 9.5;
+
 /* ------------------------------------------------------------------ mini */
 
 type MiniTrailProps = { status: BugStatus; failCount: number };
@@ -142,26 +145,29 @@ export function TrailPath({ status, failCount, timeInStatus }: TrailPathProps) {
         )}
 
         {Array.from({ length: loops }, (_, i) => {
-          // Every loop leaves Resolved and lands on Ongoing at the same two points, so they share
-          // one arrowhead (drawn once, below). Heights grow gently so the loops nest and the
-          // outermost label stays inside the drawing.
-          const a = X[2] - 8;
-          const b = X[1] + 8;
-          const control = y - 8 - 70 - i * 26;
+          // Every loop leaves the top centre of Resolved's ring and lands on the top centre of
+          // Ongoing's (RING_TOP: radius 8 + half the 3px stroke), so they share one arrowhead,
+          // drawn once and symmetric about the station. The control points sit straight above
+          // the stations, so each loop leaves and arrives vertically. Heights grow gently so the
+          // loops nest and the outermost label stays inside the drawing.
+          const a = X[2];
+          const b = X[1];
+          const top = y - RING_TOP;
+          const control = top - 70 - i * 26;
           // A cubic's midpoint sits 3/4 of the way to its control points: label just above it.
-          const peak = y - 8 + 0.75 * (control - (y - 8));
+          const peak = top + 0.75 * (control - top);
           const outermost = i === loops - 1;
           return (
             <g key={i}>
               <path
-                d={`M${a} ${y - 8} C ${a} ${control}, ${b} ${control}, ${b} ${y - 8}`}
+                d={`M${a} ${top} C ${a} ${control}, ${b} ${control}, ${b} ${top}`}
                 fill="none"
                 stroke="var(--bt-failed)"
                 strokeWidth="1.8"
               />
               {i === 0 && (
                 <path
-                  d={`M${b - 5} ${y - 17} L${b} ${y - 8} L${b + 6} ${y - 16}`}
+                  d={`M${b - 5.5} ${top - 7} L${b} ${top} L${b + 5.5} ${top - 7}`}
                   fill="none"
                   stroke="var(--bt-failed)"
                   strokeWidth="1.8"
