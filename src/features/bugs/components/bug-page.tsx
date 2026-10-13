@@ -232,8 +232,10 @@ function BugView({ bug, project }: { bug: BugDetail; project: ProjectDetail }) {
           </DetailSection>
         )}
 
-        {/* Activity and Chat side by side, one height, each scrolling inside (2026-10-13). */}
-        <div className={cn('grid gap-5', canReadChat && 'lg:grid-cols-2')}>
+        {/* Activity and Chat side by side, one height, each scrolling inside. 60/40, because an
+            activity row ("Admin moved it from Ongoing to Resolved · 2h ago") needs the width to
+            stay on one line, while chat bubbles wrap fine (2026-10-13). */}
+        <div className={cn('grid gap-5', canReadChat && 'lg:grid-cols-[3fr_2fr]')}>
           <ActivityPanel bugKey={bug.key} className={PANEL_HEIGHT} />
           {canReadChat && (
             <aside
