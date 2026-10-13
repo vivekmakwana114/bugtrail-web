@@ -16,8 +16,7 @@ const MENTION_AT_CARET = /(^|\s)@([^\s@]{0,30})$/;
 type ChatComposerProps = {
   /** Who can be mentioned: the project's active members (not you). */
   members: UserSummary[];
-  pending: boolean;
-  /** Resolves true when sent, so the composer clears; false keeps the text for a retry. */
+  /** Resolves true when sent; false puts the text back (if the box is still empty) for a retry. */
   onSend: (input: { body: string; mentions: string[] }) => Promise<boolean>;
 };
 
@@ -26,7 +25,7 @@ type ChatComposerProps = {
  * "@Name" and remembers who it was, so the API can notify them (only names still in the text
  * when sending count).
  */
-export function ChatComposer({ members, pending, onSend }: ChatComposerProps) {
+export function ChatComposer({ members, onSend }: ChatComposerProps) {
   const listId = useId();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [text, setText] = useState('');
@@ -66,14 +65,23 @@ export function ChatComposer({ members, pending, onSend }: ChatComposerProps) {
     });
   };
 
+  /*
+   * Clear the box the moment Enter is pressed, not when the server answers: whatever is typed
+   * while a message is on its way is the next message and must not be wiped. Sends can overlap
+   * (the panel shows each as "Sending…"). A failed send puts its text back, but only into an
+   * empty box, never over something new.
+   */
   const send = async () => {
     const body = text.trim();
-    if (!body || pending) return;
-    const mentions = picked.filter((m) => body.includes(`@${m.name}`)).map((m) => m.id);
-    if (await onSend({ body, mentions })) {
-      setText('');
-      setPicked([]);
-      setQuery(null);
+    if (!body) return;
+    const mentionsPicked = picked;
+    const mentions = mentionsPicked.filter((m) => body.includes(`@${m.name}`)).map((m) => m.id);
+    setText('');
+    setPicked([]);
+    setQuery(null);
+    if (!(await onSend({ body, mentions }))) {
+      setText((current) => current || body);
+      setPicked((current) => (current.length ? current : mentionsPicked));
     }
   };
 
@@ -160,7 +168,7 @@ export function ChatComposer({ members, pending, onSend }: ChatComposerProps) {
           size="icon"
           variant="primary"
           aria-label="Send message"
-          disabled={!text.trim() || pending}
+          disabled={!text.trim()}
           onClick={send}
         >
           <SendHorizontal aria-hidden />

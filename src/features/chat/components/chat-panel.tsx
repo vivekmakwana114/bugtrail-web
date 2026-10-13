@@ -1,8 +1,8 @@
 'use client';
 
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { ArrowDown } from 'lucide-react';
+import { ArrowDown, LoaderCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePermission } from '@/components/auth/can';
@@ -18,7 +18,7 @@ import {
   useSendMessage,
 } from '../hooks';
 import { ChatComposer } from './chat-composer';
-import { ChatMessage } from './chat-message';
+import { ChatMessage, SendingMessage } from './chat-message';
 
 /** Messages from the same person this close together read as one block. */
 const GROUP_WITHIN_MS = 5 * 60_000;
@@ -46,6 +46,9 @@ export function ChatPanel({ bugId, members, readOnly }: ChatPanelProps) {
   const edit = useEditMessage();
   const remove = useDeleteMessage(bugId);
   const messages = flattenThread(thread.data);
+  // Messages on their way: shown at once as "Sending…", gone when the server's copy arrives.
+  const [outbox, setOutbox] = useState<{ id: number; body: string }[]>([]);
+  const nextOutboxId = useRef(0);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const nearBottom = useRef(true);
@@ -76,6 +79,32 @@ export function ChatPanel({ bugId, members, readOnly }: ChatPanelProps) {
     previous.current = { first: firstId, last: lastId, height: el.scrollHeight };
   }, [firstId, lastId, lastSenderId, user?.id]);
 
+  // Your own message appears as "Sending…" at the bottom: bring it into view at once.
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (el && outbox.length) el.scrollTop = el.scrollHeight;
+  }, [outbox.length]);
+
+  /*
+   * The list stays limited: 30 messages at a time. Older ones load by themselves when the top
+   * of the list scrolls into view (the button in that slot stays for keyboard users).
+   */
+  const topSlotRef = useRef<HTMLDivElement>(null);
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = thread;
+  useEffect(() => {
+    const root = scrollRef.current;
+    const slot = topSlotRef.current;
+    if (!root || !slot || !hasNextPage) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !isFetchingNextPage) fetchNextPage();
+      },
+      { root, threshold: 0.5 },
+    );
+    observer.observe(slot);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
   const onScroll = () => {
     const el = scrollRef.current;
     if (!el) return;
@@ -98,6 +127,17 @@ export function ChatPanel({ bugId, members, readOnly }: ChatPanelProps) {
     }
   };
 
+  const sendMessage = async (input: { body: string; mentions: string[] }) => {
+    const id = nextOutboxId.current++;
+    setOutbox((pending) => [...pending, { id, body: input.body }]);
+    try {
+      // The server's copy is in the thread before this resolves (useSendMessage onSuccess).
+      return await attempt(() => send.mutateAsync(input), "Couldn't send the message");
+    } finally {
+      setOutbox((pending) => pending.filter((m) => m.id !== id));
+    }
+  };
+
   const mentionable = members.filter((m) => m.status === 'active' && m.role && m.id !== user?.id);
 
   // Screen readers hear the newest message from someone else, not the whole list on every
@@ -116,10 +156,22 @@ export function ChatPanel({ bugId, members, readOnly }: ChatPanelProps) {
         <p className="sr-only" role="status">
           {announcement}
         </p>
-        {!connected && (
+        {!connected ? (
           <span className="text-xs text-ink-3" role="status">
             Reconnecting… new messages will appear when it&apos;s back.
           </span>
+        ) : (
+          thread.isFetching &&
+          !thread.isPending &&
+          !thread.isFetchingNextPage && (
+            <span className="inline-flex items-center gap-1.5 text-xs text-ink-3" role="status">
+              <LoaderCircle
+                className="size-3.5 animate-spin motion-reduce:animate-none"
+                aria-hidden
+              />
+              Syncing…
+            </span>
+          )
         )}
       </header>
 
@@ -143,7 +195,7 @@ export function ChatPanel({ bugId, members, readOnly }: ChatPanelProps) {
                 Retry
               </Button>
             </div>
-          ) : messages.length === 0 ? (
+          ) : messages.length === 0 && outbox.length === 0 ? (
             <p className="p-3 text-sm text-ink-3">
               No messages yet.{' '}
               {canSend &&
@@ -152,15 +204,24 @@ export function ChatPanel({ bugId, members, readOnly }: ChatPanelProps) {
           ) : (
             <>
               {thread.hasNextPage && (
-                <div className="flex justify-center pt-3">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => thread.fetchNextPage()}
-                    disabled={thread.isFetchingNextPage}
-                  >
-                    {thread.isFetchingNextPage ? 'Loading…' : 'Load earlier messages'}
-                  </Button>
+                // One fixed-height slot for both states, so starting a load doesn't move the list.
+                <div ref={topSlotRef} className="flex h-11 items-center justify-center pt-3">
+                  {thread.isFetchingNextPage ? (
+                    <span
+                      className="inline-flex items-center gap-2 text-sm text-ink-3"
+                      role="status"
+                    >
+                      <LoaderCircle
+                        className="size-4 animate-spin motion-reduce:animate-none"
+                        aria-hidden
+                      />
+                      Loading earlier messages…
+                    </span>
+                  ) : (
+                    <Button size="sm" variant="ghost" onClick={() => thread.fetchNextPage()}>
+                      Load earlier messages
+                    </Button>
+                  )}
                 </div>
               )}
               <ol aria-label="Messages">
@@ -176,6 +237,7 @@ export function ChatPanel({ bugId, members, readOnly }: ChatPanelProps) {
                     <ChatMessage
                       key={message.id}
                       message={message}
+                      mine={!!user && message.sender?.id === user.id}
                       continued={continued}
                       canChange={canSend && message.sender?.id === user?.id}
                       onEdit={(body) =>
@@ -190,6 +252,9 @@ export function ChatPanel({ bugId, members, readOnly }: ChatPanelProps) {
                     />
                   );
                 })}
+                {outbox.map((pending) => (
+                  <SendingMessage key={pending.id} body={pending.body} />
+                ))}
               </ol>
             </>
           )}
@@ -208,11 +273,7 @@ export function ChatPanel({ bugId, members, readOnly }: ChatPanelProps) {
       </div>
 
       {canSend ? (
-        <ChatComposer
-          members={mentionable}
-          pending={send.isPending}
-          onSend={(input) => attempt(() => send.mutateAsync(input), "Couldn't send the message")}
-        />
+        <ChatComposer members={mentionable} onSend={sendMessage} />
       ) : (
         <p className="border-t border-line p-3 text-sm text-ink-3">
           {readOnly
