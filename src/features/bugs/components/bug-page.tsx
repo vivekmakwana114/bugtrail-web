@@ -184,7 +184,7 @@ function BugView({ bug, project }: { bug: BugDetail; project: ProjectDetail }) {
               {bug.failCount}
             </span>
           </Fact>
-          <Fact label={bug.passedAt ? 'Took' : 'Age'}>
+          <Fact label={bug.passedAt ? 'Time Taken' : 'Age'}>
             <span className="font-mono">{formatDuration(bug.ageMs)}</span>
           </Fact>
           <Fact label="Reported">
@@ -273,7 +273,7 @@ function readOnlyReason(bug: BugDetail, project: ProjectDetail): string {
 function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="grid min-w-0 content-start gap-1">
-      <dt className="text-xs font-medium text-ink-3">{label}</dt>
+      <dt className="text-sm font-medium text-ink-3">{label}</dt>
       <dd className="min-w-0">{children}</dd>
     </div>
   );

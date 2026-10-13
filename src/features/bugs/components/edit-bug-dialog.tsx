@@ -85,7 +85,10 @@ export function EditBugDialog({ bug, modules, open, onOpenChange }: EditBugDialo
   const people = assignable.data ?? [];
   const assigneeChoices =
     bug.assignee && !people.some((user) => user.id === bug.assignee?.id)
-      ? [...people, { ...bug.assignee, email: '', role: null, status: 'active' as const }]
+      ? [
+          ...people,
+          { ...bug.assignee, email: '', role: null, designation: '', status: 'active' as const },
+        ]
       : people;
 
   const close = (next: boolean) => {

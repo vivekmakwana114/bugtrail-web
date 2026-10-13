@@ -5,7 +5,7 @@ import { StatusGlyph } from '@/components/shared/status-glyph';
 import { StatusRing } from '@/components/shared/status-ring';
 import { DetailSection } from '@/components/templates/detail-page';
 import { BUG_STATUSES, STATUS_META, TROUBLE_AGE_DAYS } from '@/config/statuses';
-import { roleLabel } from '@/config/roles';
+import { roleWithDesignation } from '@/config/roles';
 import { formatCount, formatRelative } from '@/lib/format';
 import type { ProjectDetail } from '@/types/api';
 import { PROJECT_STATUS_LABELS } from '../schemas';
@@ -107,7 +107,7 @@ function MemberList({ project }: { project: ProjectDetail }) {
                   )}
                 </span>
                 <span className="text-xs text-ink-3">
-                  {roleLabel(member.role)}
+                  {roleWithDesignation(member.role, member.designation)}
                   {member.status !== 'active' && ` · ${member.status}`}
                 </span>
               </span>

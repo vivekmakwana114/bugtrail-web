@@ -23,6 +23,8 @@ const addUserSchema = z.object({
   name: z.string().trim().min(1, 'Enter their name.').max(100, 'Keep it under 100 characters.'),
   email,
   role: z.enum(roles, { message: 'Pick a role.' }),
+  /** Free-text job title next to the role; optional. */
+  designation: z.string().trim().max(100, 'Keep it under 100 characters.'),
   password: newPassword,
 });
 type AddUserValues = z.infer<typeof addUserSchema>;
@@ -45,7 +47,7 @@ export function AddUserDialog({ open, onOpenChange }: AddUserDialogProps) {
     formState: { errors },
   } = useForm<AddUserValues>({
     resolver: zodResolver(addUserSchema),
-    defaultValues: { name: '', email: '', password: '' },
+    defaultValues: { name: '', email: '', designation: '', password: '' },
   });
 
   const close = (next: boolean) => {
@@ -108,6 +110,19 @@ export function AddUserDialog({ open, onOpenChange }: AddUserDialogProps) {
               aria-invalid={!!errors.role}
             />
           )}
+        />
+      </Field>
+      <Field
+        id="new-user-designation"
+        label="Designation (optional)"
+        hint="Their job title, shown next to the role, e.g. MERN Developer."
+        error={errors.designation?.message}
+      >
+        <Input
+          id="new-user-designation"
+          placeholder="MERN Developer"
+          aria-invalid={!!errors.designation}
+          {...register('designation')}
         />
       </Field>
       <Field

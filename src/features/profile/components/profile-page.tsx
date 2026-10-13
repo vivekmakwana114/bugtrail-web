@@ -95,6 +95,9 @@ function AccountSection({ user }: { user: SessionUser }) {
             </Link>
           )}
         </Fact>
+        <Fact label="Designation">
+          {user.designation ? user.designation : <span className="text-ink-3">Not set</span>}
+        </Fact>
         <Fact label="Member since">
           <time dateTime={user.createdAt}>{formatDate(user.createdAt)}</time>
         </Fact>

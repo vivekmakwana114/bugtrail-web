@@ -7,7 +7,7 @@ export type BugStatus = 'reported' | 'ongoing' | 'resolved' | 'pass' | 'failed';
 
 export type ProjectStatus = 'active' | 'completed' | 'archived';
 
-export type RoleKey = 'admin' | 'project_manager' | 'developer' | 'qa';
+export type RoleKey = 'admin' | 'project_manager' | 'developer' | 'ui_ux' | 'qa';
 
 /** The smallest user reference: list rows, card managers, chat senders. */
 export type UserRef = {
@@ -16,10 +16,12 @@ export type UserRef = {
   avatarUrl: string | null;
 };
 
-/** Lists and member pickers: adds email, role and account status to UserRef. */
+/** Lists and member pickers: adds email, role, designation and account status to UserRef. */
 export type UserSummary = UserRef & {
   email: string;
   role: RoleKey | null;
+  /** Free-text job title next to the role ("MERN Developer"); '' when not set. */
+  designation: string;
   status: 'pending' | 'active' | 'suspended' | 'rejected';
 };
 

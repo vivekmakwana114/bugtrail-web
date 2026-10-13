@@ -19,13 +19,17 @@ export async function getUsers(
  */
 export async function setUserStatus(
   userId: string,
-  input: { status: Exclude<UserStatus, 'pending'>; role?: RoleKey },
+  input: { status: Exclude<UserStatus, 'pending'>; role?: RoleKey; designation?: string },
 ): Promise<void> {
   await api.patch(`/users/${userId}/status`, input);
 }
 
-export async function changeUserRole(userId: string, role: RoleKey): Promise<void> {
-  await api.patch(`/users/${userId}`, { role });
+/** Role and designation together: the dialog that sets one shows the other. */
+export async function changeUserRole(
+  userId: string,
+  input: { role: RoleKey; designation: string },
+): Promise<void> {
+  await api.patch(`/users/${userId}`, input);
 }
 
 /** Admin-created accounts are active straight away (no approval queue). */
@@ -34,6 +38,7 @@ export async function createUser(input: {
   email: string;
   password: string;
   role: RoleKey;
+  designation: string;
 }): Promise<void> {
   await api.post('/users', input);
 }

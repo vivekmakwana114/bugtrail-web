@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { routes } from '@/config/routes';
-import { roleLabel } from '@/config/roles';
+import { roleWithDesignation } from '@/config/roles';
 import { useAuth } from '@/providers/auth-provider';
 
 /** Who you are, your profile page, the theme switch, and sign out. */
@@ -39,7 +39,9 @@ export function ProfileMenu() {
         <div className="grid gap-0.5 px-2 py-1.5">
           <span className="truncate text-sm font-medium">{user.name}</span>
           <span className="truncate text-xs text-ink-3">{user.email}</span>
-          <span className="text-xs text-ink-2">{roleLabel(user.role)}</span>
+          <span className="text-xs text-ink-2">
+            {roleWithDesignation(user.role, user.designation)}
+          </span>
         </div>
         <DropdownMenuItem onSelect={() => router.push(routes.profile)}>
           <UserRound aria-hidden />
