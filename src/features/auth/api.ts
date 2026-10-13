@@ -44,3 +44,16 @@ export async function resetPassword(input: { token: string; password: string }):
     { params: { token: input.token } },
   );
 }
+
+/**
+ * Signed in, knowing the current password. The API revokes every refresh token (signing out
+ * your other devices) and issues a new pair for this session: the access token here, the
+ * refresh token as a new cookie. Keep using the old access token and the next call fails.
+ */
+export async function changePassword(input: {
+  currentPassword: string;
+  newPassword: string;
+}): Promise<void> {
+  const { data } = await api.post<Pick<LoginResponse, 'tokens'>>('/auth/change-password', input);
+  accessTokenStore.set(data.tokens.access.token);
+}

@@ -67,3 +67,14 @@ const dateTimeFormat = new Intl.DateTimeFormat('en-GB', {
 export function formatDateTime(iso: string): string {
   return dateTimeFormat.format(new Date(iso));
 }
+
+const fullDateFormat = new Intl.DateTimeFormat('en-GB', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+});
+
+/** "12 Oct 2026": for dates where the time of day doesn't matter (when someone joined). */
+export function formatDate(iso: string): string {
+  return fullDateFormat.format(new Date(iso));
+}

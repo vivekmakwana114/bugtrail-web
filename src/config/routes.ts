@@ -11,6 +11,7 @@ export const routes = {
   users: '/users',
   roles: '/roles',
   notifications: '/notifications',
+  profile: '/profile',
   project: (projectId: string) => `/projects/${projectId}`,
   bug: (projectId: string, bugKey: string) => `/projects/${projectId}/bugs/${bugKey}`,
 } as const;

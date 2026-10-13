@@ -239,7 +239,7 @@ Reported → Ongoing → Resolved ──QA──► Pass
 - **Bug detail (`/projects/[projectId]/bugs/[bugKey]`)**, in two columns:
   - **Left:** title, key, module, description, attachment links, status control (only allowed statuses, plus the "Send email" checkbox), assignee, fail count, age, time per status, activity timeline.
   - **Right: chat panel.** Realtime messages, load older messages on scroll, @mentions, edit/delete your own messages.
-- Users (with a pending-approval tab), Roles (read-only: what each of the four roles can do, from `GET /roles`, as a permission × role matrix; shown to Admin and PM via `user:read`), Notifications (everyone: All / Unread tabs, grouped by day, mark read, live; the bell links to it), Profile.
+- Users (with a pending-approval tab), Roles (read-only: what each of the four roles can do, from `GET /roles`, as a permission × role matrix; shown to Admin and PM via `user:read`), Notifications (everyone: All / Unread tabs, grouped by day, mark read, live; the bell links to it), Profile (from the profile menu: read-only account facts, name + picture link with preview, change password).
 
 ### Structure
 
