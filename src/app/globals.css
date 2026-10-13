@@ -87,8 +87,10 @@
   --font-mono: var(--font-plex-mono), ui-monospace, 'Cascadia Mono', Consolas, monospace;
 
   --text-*: initial;
-  --text-xs: 0.75rem; /* 12: meta, table headers */
-  --text-xs--line-height: 1rem;
+  /* 12.5: meta, hints, table headers. Was 12px; raised 2026-10-13 for readability, still a
+     step below sm so labels and hints sit under the content they describe. */
+  --text-xs: 0.78125rem;
+  --text-xs--line-height: 1.125rem;
   --text-sm: 0.8125rem; /* 13: table cells, inputs, buttons */
   --text-sm--line-height: 1.25rem;
   --text-md: 0.875rem; /* 14: body */
