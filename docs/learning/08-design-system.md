@@ -57,6 +57,18 @@ Radix handles focus trapping in dialogs, arrow keys in menus, and ARIA roles. Yo
 - not relying on colour (the glyphs);
 - writing `role="alert"` on errors.
 
+### 6. One mark, two kinds of file (2026-10-13)
+
+The sidebar logo is **inline SVG code** (`logo.tsx`): it uses `currentColor` and `var(--bt-bg)`, so it flips with light and dark mode for free. A favicon or a file you email can't use CSS variables, so those are **generated** by `npm run brand:icons` (`scripts/brand/build-icons.mjs`): the browser icons in `src/app/` (Next.js adds the `<link>` tags for `icon.svg`, `favicon.ico` and `apple-icon.png` by file name), and shareable files in `public/assets/` (served as static files at `/assets/...`; the guide is `docs/brand/README.md`). No design tool is needed, because the geometry already exists as code; a script makes it repeatable and deterministic.
+
+Three lessons from the editing pass on the icon:
+
+- **A favicon isn't the logo shrunk.** The 40×20 mark is too wide for a square, so the icon is a redraw on an ink tile with thicker strokes. The first version still had stations so big they touched and read as bubbles; it only worked once there was air between them.
+- **Simplify the smallest size.** At 16px a 1px ring hole blurs into grey, so the 16px frame inside `favicon.ico` uses solid stations. Icon designers do this on purpose.
+- **Transparent files need truly hollow shapes.** In the app the rings are "hollow" because they're filled with the page colour. On a transparent background that trick shows a line through each ring, so the files draw the line as segments that stop at each ring.
+
+The wordmark in the logo files is converted to outlines (with `opentype.js`, a dev dependency used only by the script) so it looks right on machines without Instrument Sans.
+
 ## Try it yourself
 
 1. `npm run dev`, open `/design`, and switch System / Light / Dark. Reload in dark: there's no flash of light first. Why?
