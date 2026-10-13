@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { MoreHorizontal } from 'lucide-react';
+import { toast } from 'sonner';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,6 +14,7 @@ import {
 import { Textarea } from '@/components/ui/input';
 import { formatDateTime, formatRelative } from '@/lib/format';
 import { cn, escapeRegExp } from '@/lib/utils';
+import { MESSAGE_EDIT_WINDOW_MS } from '../config';
 import type { ChatMessage as Message } from '../types';
 
 type ChatMessageProps = {
@@ -21,7 +23,7 @@ type ChatMessageProps = {
   mine: boolean;
   /** Same sender within a few minutes of the previous message: skip the avatar, name and time. */
   continued: boolean;
-  /** Edit and delete: your own messages, while the chat is writable. */
+  /** Your own message while the chat is writable: delete any time, edit for 15 seconds after sending. */
   canChange: boolean;
   onEdit: (body: string) => Promise<boolean>;
   onDelete: () => Promise<boolean>;
@@ -43,6 +45,29 @@ export function ChatMessage({
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
   const name = message.sender?.name ?? 'A deleted user';
+
+  // Your message stays editable for 15 seconds after sending (the API enforces it). A timer ends
+  // the window on screen at the right moment; an edit still open then is closed with a note.
+  const sentAt = new Date(message.createdAt).getTime();
+  const [withinEditWindow, setWithinEditWindow] = useState(
+    () => Date.now() - sentAt < MESSAGE_EDIT_WINDOW_MS,
+  );
+  useEffect(() => {
+    const left = sentAt + MESSAGE_EDIT_WINDOW_MS - Date.now();
+    if (left <= 0) return;
+    const timer = setTimeout(() => {
+      setWithinEditWindow(false);
+      setMode((current) => {
+        if (current !== 'edit') return current;
+        toast.info('Editing time is over', {
+          description: `Messages can be edited for ${MESSAGE_EDIT_WINDOW_MS / 1000} seconds after sending.`,
+        });
+        return 'view';
+      });
+    }, left);
+    return () => clearTimeout(timer);
+  }, [sentAt]);
+  const canEdit = canChange && withinEditWindow;
 
   const run = async (action: () => Promise<boolean>) => {
     setBusy(true);
@@ -174,14 +199,16 @@ export function ChatMessage({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align={mine ? 'end' : 'start'}>
-            <DropdownMenuItem
-              onSelect={() => {
-                setDraft(message.body ?? '');
-                setMode('edit');
-              }}
-            >
-              Edit
-            </DropdownMenuItem>
+            {canEdit && (
+              <DropdownMenuItem
+                onSelect={() => {
+                  setDraft(message.body ?? '');
+                  setMode('edit');
+                }}
+              >
+                Edit
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem tone="danger" onSelect={() => setMode('confirm-delete')}>
               Delete
             </DropdownMenuItem>
