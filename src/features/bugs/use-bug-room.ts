@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useEffectEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { routes } from '@/config/routes';
 import { projectKeys } from '@/features/projects/hooks';
 import { chatKeys, markMessageDeleted, upsertMessage } from '@/features/chat/hooks';
 import type { ChatMessage } from '@/features/chat/types';
@@ -26,6 +28,7 @@ type BugUpdatedEvent = {
 export function useBugRoom(bug: BugDetail) {
   const { socket } = useSocket();
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   const refreshBug = () =>
     Promise.all([
@@ -38,8 +41,16 @@ export function useBugRoom(bug: BugDetail) {
   const onBugUpdated = useEffectEvent((event: BugUpdatedEvent) => {
     if (event.id !== bug.id) return;
     if (event.deleted) {
-      toast.info(`${event.key} was deleted`);
-      refreshBug(); // the refetch answers 404 and the page says the bug isn't available
+      // Our own delete: its dialog already toasts and navigates. Refetching here would only
+      // fetch the bug we just deleted (two pointless 404s).
+      if (queryClient.getMutationCache().find({ mutationKey: bugKeys.deleteMutation(bug.id) })) {
+        return;
+      }
+      // Someone else deleted it while we were looking: say so and go back to the project.
+      toast.info(`${event.key} was deleted by someone else`);
+      queryClient.invalidateQueries({ queryKey: bugKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: projectKeys.detail(bug.project.id) });
+      router.replace(routes.project(bug.project.id));
       return;
     }
     // Our own change already put this exact version in the cache: nothing to fetch.

@@ -182,3 +182,21 @@ The dashboard test doesn't hard-code "5 open bugs". For each view it asks the AP
 ### 32. Lay out by what each block is for
 
 The first layout put Longest-running tickets in the narrow right column, and Age, the column the block exists for, was clipped. Compact blocks (status bars, developer numbers) share a row; the list that needs width gets the full width. A layout is right when nothing important needs a sideways scroll at common widths.
+
+## Added with the users screen
+
+### 33. When the API is the bottleneck, fix the API
+
+`GET /users?name=` was an exact match, so a search box on top of it would only find "Riya Shah" typed in full. Filtering 50 rows in the browser would have hidden the problem until the 51st user. Instead the API gained `search` (part of the name or email, case-insensitive, input escaped so "(" is searched literally) and list rows gained `createdAt` / `lastLoginAt`. A small API PR beats a clever client workaround.
+
+### 34. One ConfirmDialog for every "are you sure?"
+
+Reject, suspend, reactivate, delete user and delete bug all ask the same thing. `ConfirmDialog` takes a question, a plain-words description (including whether it can be undone) and an async `onConfirm`. It disables its buttons while running and, when the API refuses ("This user has reported or been assigned bugs. Suspend them instead."), shows that reason in the dialog instead of a toast that disappears. The bug page's delete dialog now uses it too.
+
+### 35. An `sr-only` label can push the whole page sideways
+
+On a phone the users page scrolled sideways by 303px although the table sits in an `overflow-x-auto` frame. The culprit was the 1px screen-reader label in the empty "Actions" header: `sr-only` is `position: absolute`, the frame wasn't positioned, so the label was placed against the page (at the table's far edge, 693px) and the frame's overflow didn't clip it. `relative` on the shared Table frame fixes it for every table. The first guess (`min-w-0`) didn't change the number, so it was reverted: keep only fixes you've measured.
+
+### 36. Features meet: live updates and delete
+
+Deleting a bug broadcasts "deleted" to everyone viewing it, including you, and the page refetched the bug it had just deleted (two 404s). The delete mutation now has a `mutationKey`; the live handler checks the mutation cache, ignores your own delete, and for anyone else's shows "CHK-6 was deleted by someone else" and goes back to the project. Rerun older end-to-end tests after adding cross-cutting behaviour like live updates: one old "stale page" test also had to change, because the page no longer stays stale.

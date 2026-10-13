@@ -3,11 +3,15 @@ import { cn } from '@/lib/utils';
 
 /**
  * Plain table elements with the grid's look: dense rows, hairlines, mono for machine values.
- * The ticket grid wires TanStack Table onto these; simple lists use them directly.
+ * The ticket grid, the dashboard and the users list all use these directly (no table library).
+ *
+ * The frame scrolls sideways when the table is wider than the screen. It's `relative` so that
+ * absolutely positioned bits inside cells (an `sr-only` label, for one) are clipped by the frame;
+ * otherwise they're placed against the page and can make the whole page scroll sideways.
  */
 export function Table({ className, ...props }: ComponentProps<'table'>) {
   return (
-    <div className="overflow-x-auto rounded-md border border-line bg-surface">
+    <div className="relative overflow-x-auto rounded-md border border-line bg-surface">
       <table className={cn('w-full border-collapse text-sm', className)} {...props} />
     </div>
   );
