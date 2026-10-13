@@ -142,12 +142,11 @@ export function TrailPath({ status, failCount, timeInStatus }: TrailPathProps) {
         )}
 
         {Array.from({ length: loops }, (_, i) => {
-          // Loops nest like a rainbow: each one starts a step further right around Resolved's
-          // ring and lands a step further left around Ongoing's, so no two share an end or an
-          // arrowhead. Heights grow gently so the outermost label stays inside the drawing.
-          const spread = (i - 1) * 12;
-          const a = X[2] + spread;
-          const b = X[1] - spread;
+          // Every loop leaves Resolved and lands on Ongoing at the same two points, so they share
+          // one arrowhead (drawn once, below). Heights grow gently so the loops nest and the
+          // outermost label stays inside the drawing.
+          const a = X[2] - 8;
+          const b = X[1] + 8;
           const control = y - 8 - 70 - i * 26;
           // A cubic's midpoint sits 3/4 of the way to its control points: label just above it.
           const peak = y - 8 + 0.75 * (control - (y - 8));
@@ -160,14 +159,16 @@ export function TrailPath({ status, failCount, timeInStatus }: TrailPathProps) {
                 stroke="var(--bt-failed)"
                 strokeWidth="1.8"
               />
-              <path
-                d={`M${b - 5} ${y - 17} L${b} ${y - 8} L${b + 6} ${y - 16}`}
-                fill="none"
-                stroke="var(--bt-failed)"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              {i === 0 && (
+                <path
+                  d={`M${b - 5} ${y - 17} L${b} ${y - 8} L${b + 6} ${y - 16}`}
+                  fill="none"
+                  stroke="var(--bt-failed)"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              )}
               {outermost && (
                 <text
                   x={(a + b) / 2}
