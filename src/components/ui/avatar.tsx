@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { initials } from '@/lib/format';
+import { toImageUrl } from '@/lib/image-url';
 
 type AvatarProps = {
   name: string;
@@ -13,13 +14,15 @@ type AvatarProps = {
 
 /**
  * A small rounded square: initials in mono, or the user's picture when they've set one.
- * The picture is any URL a user pasted, so it can break (a deleted file, a share page instead
- * of an image); then it falls back to initials rather than a broken-image icon.
+ * The picture is any URL a user pasted. Google Drive share links are turned into a direct image
+ * URL (toImageUrl), so they show too. It can still break (a deleted file, a file that isn't
+ * shared publicly); then it falls back to initials rather than a broken-image icon.
  */
 export function Avatar({ name, src, size = 'sm', className }: AvatarProps) {
+  const imageUrl = src ? toImageUrl(src) : null;
   // Remember which URL failed, not just "failed", so a new URL gets a fresh try.
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
-  const showImage = !!src && src !== failedSrc;
+  const showImage = !!imageUrl && imageUrl !== failedSrc;
 
   return (
     <span
@@ -35,10 +38,10 @@ export function Avatar({ name, src, size = 'sm', className }: AvatarProps) {
       {showImage ? (
         // eslint-disable-next-line @next/next/no-img-element -- user-supplied URL on any host
         <img
-          src={src}
+          src={imageUrl}
           alt=""
           className="size-full object-cover"
-          onError={() => setFailedSrc(src)}
+          onError={() => setFailedSrc(imageUrl)}
         />
       ) : (
         initials(name)

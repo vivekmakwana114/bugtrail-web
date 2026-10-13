@@ -21,6 +21,7 @@ import { changePasswordSchema, type ChangePasswordValues } from '@/features/auth
 import type { SessionUser } from '@/features/auth/types';
 import { getErrorMessage, getErrorStatus } from '@/lib/api-client';
 import { formatDate, formatDateTime, formatRelative } from '@/lib/format';
+import { driveFileId } from '@/lib/image-url';
 import { useAuth } from '@/providers/auth-provider';
 import * as profileApi from '../api';
 import { profileSchema, type ProfileValues } from '../schemas';
@@ -171,9 +172,11 @@ function ProfileForm({ user }: { user: SessionUser }) {
         <div className="flex items-center gap-4">
           <Avatar name={name.trim() || user.name} src={previewSrc} size="lg" />
           <p className="text-xs text-ink-3">
-            {avatarUrl
-              ? 'Preview. If it still shows your initials, the picture link didn’t load.'
-              : 'No picture, so your initials are shown.'}
+            {!avatarUrl
+              ? 'No picture, so your initials are shown.'
+              : driveFileId(avatarUrl)
+                ? 'Preview. If it still shows your initials, set the file’s sharing in Drive to “Anyone with the link”.'
+                : 'Preview. If it still shows your initials, the picture link didn’t load.'}
           </p>
         </div>
         <Field id="name" label="Name" error={errors.name?.message}>
@@ -182,7 +185,7 @@ function ProfileForm({ user }: { user: SessionUser }) {
         <Field
           id="avatarUrl"
           label="Picture link (optional)"
-          hint="A direct link to an image (https://…/photo.jpg). Google Drive share links open a page, not the image, so they won't show."
+          hint="A Google Drive share link (shared with “Anyone with the link”) or a direct link to an image (https://…/photo.jpg)."
           error={errors.avatarUrl?.message}
         >
           <div className="flex gap-2">
