@@ -28,7 +28,6 @@ import { ChatPanel } from '@/features/chat/components/chat-panel';
 import { useBug, useProjectModules } from '../hooks';
 import { useBugRoom } from '../use-bug-room';
 import type { BugDetail } from '../types';
-import { AssignBugDialog } from './assign-bug-dialog';
 import { BugTimeline } from './bug-timeline';
 import { DeleteBugDialog } from './delete-bug-dialog';
 import { EditBugDialog } from './edit-bug-dialog';
@@ -41,7 +40,7 @@ import { StatusControl } from './status-control';
 export function BugPage() {
   const { projectId, bugKey } = useParams<{ projectId: string; bugKey: string }>();
   const bug = useBug(bugKey);
-  // Members (assign) and archived status (read-only) come from the project, usually cached already.
+  // Members (chat mentions) and archived status (read-only) come from the project, usually cached.
   const project = useProject(projectId);
 
   if (bug.isPending || project.isPending) return <BugSkeleton />;
@@ -73,10 +72,9 @@ function BugView({ bug, project }: { bug: BugDetail; project: ProjectDetail }) {
   const modules = useProjectModules(project.id);
   const writable = project.status !== 'archived';
   const canEdit = usePermission('bug:update') && writable;
-  const canAssign = usePermission('bug:assign') && writable;
   const canDelete = usePermission('bug:delete');
   const canReadChat = usePermission('chat:read');
-  const [dialog, setDialog] = useState<'edit' | 'assign' | 'delete' | null>(null);
+  const [dialog, setDialog] = useState<'edit' | 'delete' | null>(null);
   const openDialog = (name: typeof dialog) => () => setDialog(name);
   const onDialogChange = (open: boolean) => !open && setDialog(null);
   // Live: other people's status moves, edits and messages show up without a refresh.
@@ -155,22 +153,16 @@ function BugView({ bug, project }: { bug: BugDetail; project: ProjectDetail }) {
         }
       >
         <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm sm:grid-cols-3">
+          {/* Read-only: assigning happens in the report and edit forms (decided 2026-10-13). */}
           <Fact label="Assignee">
-            <span className="flex flex-wrap items-center gap-2">
-              {bug.assignee ? (
-                <span className="inline-flex min-w-0 items-center gap-2">
-                  <Avatar name={bug.assignee.name} src={bug.assignee.avatarUrl} />
-                  <span className="truncate">{bug.assignee.name}</span>
-                </span>
-              ) : (
-                <span className="text-ink-3">Unassigned</span>
-              )}
-              {canAssign && (
-                <Button size="sm" variant="ghost" onClick={openDialog('assign')}>
-                  {bug.assignee ? 'Change' : 'Assign'}
-                </Button>
-              )}
-            </span>
+            {bug.assignee ? (
+              <span className="inline-flex min-w-0 items-center gap-2">
+                <Avatar name={bug.assignee.name} src={bug.assignee.avatarUrl} />
+                <span className="truncate">{bug.assignee.name}</span>
+              </span>
+            ) : (
+              <span className="text-ink-3">Unassigned</span>
+            )}
           </Fact>
           <Fact label="Module">{bug.moduleName}</Fact>
           <Fact label="Reporter">
@@ -253,9 +245,6 @@ function BugView({ bug, project }: { bug: BugDetail; project: ProjectDetail }) {
           open={dialog === 'edit'}
           onOpenChange={onDialogChange}
         />
-      )}
-      {canAssign && (
-        <AssignBugDialog bug={bug} open={dialog === 'assign'} onOpenChange={onDialogChange} />
       )}
       {canDelete && (
         <DeleteBugDialog bug={bug} open={dialog === 'delete'} onOpenChange={onDialogChange} />
