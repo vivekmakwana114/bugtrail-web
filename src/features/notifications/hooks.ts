@@ -1,11 +1,38 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { useSocket } from '@/providers/socket-provider';
 import * as notificationsApi from './api';
 import { notificationKeys } from './keys';
 
 export { notificationKeys };
+
+export const NOTIFICATIONS_PAGE_SIZE = 30;
+
+/**
+ * The notifications page, newest first, a page at a time. A new notification over the socket
+ * invalidates notificationKeys.all, so this refetches by itself while the page is open.
+ */
+export function useNotificationList(unreadOnly: boolean) {
+  return useInfiniteQuery({
+    queryKey: notificationKeys.list(unreadOnly),
+    queryFn: ({ pageParam }) =>
+      notificationsApi.getNotifications({
+        ...(unreadOnly && { unread: true }),
+        page: pageParam,
+        limit: NOTIFICATIONS_PAGE_SIZE,
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (last) => (last.page < last.totalPages ? last.page + 1 : undefined),
+    placeholderData: keepPreviousData,
+  });
+}
 
 /**
  * The number on the bell. While the socket is connected, `notification:new` refreshes it the

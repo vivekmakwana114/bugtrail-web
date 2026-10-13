@@ -214,3 +214,21 @@ Each permission row starts with `<th scope="row">`, each role column with `<th s
 ### 39. Hiding a screen isn't protecting it
 
 `GET /roles` is open to any signed-in user: it's labels, not data. The screen is shown only to roles with `user:read` because it's for the people who assign roles. A developer who types `/roles` gets the no-access state and the query is `enabled: false`, so nothing is fetched. That's a UI choice, not security; anything actually secret is guarded by the API, never by hiding a page.
+
+## Added with the notifications page
+
+### 40. One row component, two places
+
+The bell and the page both show a notification. Copying the bell's markup into the page would have worked on day one and drifted by day ten (a new "unread" style in one, not the other). `NotificationItem` now owns the row: the dot, bold title, the hidden "(unread)" and a `<time>` with the exact date in its tooltip. The page adds a "Mark read" button through an `action` slot that sits _beside_ the row's own button, because a button inside a button is invalid HTML and breaks keyboard and screen-reader use.
+
+### 41. Live updates for free when the keys are shaped right
+
+The socket provider already invalidates `notificationKeys.all` when `notification:new` arrives. The page's list key is `['notifications', 'list', { unreadOnly }]`, which starts with that prefix, so a new notification refreshes the open page with no new socket code. The test proves it: an Admin adds the user to a project through the API, and the row appears under Today within a second. Designing query keys as a tree (`all` → `list` → filters) is what makes "refresh everything about notifications" one line.
+
+### 42. Group by the reader's day, and keep groups whole across pages
+
+"Today" means the user's calendar day, not UTC, so `groupByDay` works from local midnight. It walks the newest-first list and starts a new group only when the day changes, so when "Show more" loads the rest of Monday, those rows join Monday's group instead of starting a second "Monday". Labels go from specific to general as they age: Today, Yesterday, a weekday within the week, then "Mon 5 Oct", with the year added only when it isn't this year.
+
+### 43. Reading width for reading screens
+
+The ticket grid and the users table use the full width because they have columns. Notifications are sentences: across 1,100px the eye travels too far from the end of one line to the start of the next. `max-w-3xl` on the page keeps lines readable, and the header's action stays aligned with the list's right edge. Choose width by what the content is, not by how wide the screen is.

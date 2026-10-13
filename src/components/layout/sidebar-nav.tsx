@@ -13,7 +13,7 @@ import { useAuth } from '@/providers/auth-provider';
 export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const { hasPermission } = useAuth();
-  const items = NAV_ITEMS.filter((item) => hasPermission(item.permission));
+  const items = NAV_ITEMS.filter((item) => !item.permission || hasPermission(item.permission));
 
   return (
     <nav aria-label="Main">
