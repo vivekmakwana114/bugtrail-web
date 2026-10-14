@@ -40,6 +40,7 @@ export function SlowestTickets({ scope, view, onViewChange }: SlowestTicketsProp
       note={`The ${SLOWEST_LIMIT} oldest tickets, by age since reported. Older than ${TROUBLE_AGE_DAYS} days is marked.`}
       actions={
         <Segmented
+          variant="pill"
           label="Which tickets"
           value={view}
           onChange={onViewChange}

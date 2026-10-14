@@ -9,6 +9,7 @@ import { getProjects } from '@/features/projects/api';
 import { projectKeys } from '@/features/projects/hooks';
 import {
   RANGE_LABELS,
+  RANGE_SHORT_LABELS,
   useDashboardUrlState,
   type DashboardRange,
 } from '../use-dashboard-url-state';
@@ -49,7 +50,8 @@ export function DashboardPage() {
           <>
             <Select
               aria-label="Project"
-              className="w-56"
+              // Same height as the pill beside it.
+              className="h-9.5 w-56"
               value={projectId ?? ALL_PROJECTS}
               onValueChange={(value) => update({ project: value === ALL_PROJECTS ? null : value })}
               options={[
@@ -61,12 +63,13 @@ export function DashboardPage() {
               ]}
             />
             <Segmented<DashboardRange>
+              variant="pill"
               label="Reported in"
               value={range}
               onChange={(next) => update({ range: next })}
-              options={(Object.keys(RANGE_LABELS) as DashboardRange[]).map((value) => ({
+              options={(Object.keys(RANGE_SHORT_LABELS) as DashboardRange[]).map((value) => ({
                 value,
-                label: RANGE_LABELS[value],
+                label: RANGE_SHORT_LABELS[value],
               }))}
             />
           </>
