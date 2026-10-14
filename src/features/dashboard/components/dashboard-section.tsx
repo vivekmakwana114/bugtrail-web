@@ -38,14 +38,14 @@ export function DashboardSection({
       aria-label={title}
       className={cn(
         // min-w-0 (here and below): let a wide table scroll inside its frame instead of widening the page.
-        'grid min-w-0 content-start gap-3 rounded-md border border-line bg-surface p-4',
+        'grid min-w-0 content-start gap-4 rounded-md border border-line bg-surface p-5',
         className,
       )}
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="grid gap-0.5">
-          <h2 className="text-md font-semibold">{title}</h2>
-          {note && <p className="text-xs text-ink-3">{note}</p>}
+        <div className="grid gap-1">
+          <h2 className="text-lg font-semibold">{title}</h2>
+          {note && <p className="text-sm text-ink-3">{note}</p>}
         </div>
         {actions}
       </div>

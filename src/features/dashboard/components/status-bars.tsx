@@ -46,8 +46,9 @@ export function StatusBars({ scope }: { scope: DashboardScope }) {
         </div>
       }
     >
-      <ul className="grid gap-2.5">
+      <ul className="grid gap-3">
         {rows.map(({ status, count }) => {
+          const share = total ? Math.round((count / total) * 100) : 0;
           const label = (
             <span className="inline-flex items-center gap-1.5">
               <StatusGlyph status={status} />
@@ -57,7 +58,7 @@ export function StatusBars({ scope }: { scope: DashboardScope }) {
           return (
             <li
               key={status}
-              className="grid grid-cols-[6.5rem_minmax(0,1fr)_3.5rem] items-center gap-3 text-sm"
+              className="grid grid-cols-[6.5rem_minmax(0,1fr)_auto] items-center gap-3 sm:grid-cols-[7.5rem_minmax(0,1fr)_6.5rem] sm:gap-4 text-md"
             >
               {scope.projectId ? (
                 <Link
@@ -69,15 +70,15 @@ export function StatusBars({ scope }: { scope: DashboardScope }) {
               ) : (
                 label
               )}
-              <span className="h-2.5 overflow-hidden rounded-sm bg-sunken" aria-hidden>
+              <span className="h-3 overflow-hidden rounded-sm bg-sunken" aria-hidden>
                 <span
                   className={`block h-full rounded-sm ${BAR_CLASS[status]}`}
                   style={{ width: `${(count / max) * 100}%` }}
                 />
               </span>
-              <span className="text-right font-mono">
+              <span className="text-right font-mono whitespace-nowrap">
                 {formatCount(count)}
-                <span className="sr-only"> ({total ? Math.round((count / total) * 100) : 0}%)</span>
+                <span className="text-sm text-ink-3"> · {share}%</span>
               </span>
             </li>
           );

@@ -25,7 +25,7 @@ export function SummaryTiles({ scope }: { scope: DashboardScope }) {
         aria-label="Loading summary"
       >
         {Array.from({ length: 5 }, (_, i) => (
-          <Skeleton key={i} className="h-22" />
+          <Skeleton key={i} className="h-36" />
         ))}
       </div>
     );
@@ -56,13 +56,13 @@ export function SummaryTiles({ scope }: { scope: DashboardScope }) {
         label="Failed QA"
         value={bugs.byStatus.failed}
         tone={bugs.byStatus.failed > 0 ? 'danger' : undefined}
-        note="sent back, waiting for a fix"
+        note="sent back for a fix"
       />
       <Tile
         label={`Open > ${TROUBLE_AGE_DAYS} days`}
         value={bugs.agedOpen}
         tone={bugs.agedOpen > 0 ? 'danger' : undefined}
-        note="reported over a week ago"
+        note="older than a week"
       />
       <Tile label="Passed" value={bugs.byStatus.pass} note="verified by QA" />
       <Tile
@@ -85,18 +85,15 @@ function Tile({
   note: ReactNode;
   tone?: 'danger';
 }) {
+  // The number stays ink so the row reads evenly; the note carries the warning colour.
+  // Notes are sans, not mono: mono is too wide for five boxes in a row and wrapped.
   return (
-    <div className="grid content-start gap-1 rounded-md border border-line bg-surface p-4">
-      <dt className="text-xs font-medium text-ink-3">{label}</dt>
-      <dd
-        className={cn(
-          'font-mono text-xl font-semibold tracking-tight',
-          tone === 'danger' ? 'text-danger' : 'text-ink',
-        )}
-      >
+    <div className="grid content-start gap-3 rounded-md border border-line bg-surface p-5 last:col-span-2 md:last:col-span-1">
+      <dt className="font-mono text-xs tracking-widest text-ink-3 uppercase">{label}</dt>
+      <dd className="text-display font-semibold tracking-tight text-ink tabular-nums">
         {formatCount(value)}
       </dd>
-      <dd className="text-xs text-ink-3">{note}</dd>
+      <dd className={cn('text-sm', tone === 'danger' ? 'text-danger' : 'text-ink-3')}>{note}</dd>
     </div>
   );
 }

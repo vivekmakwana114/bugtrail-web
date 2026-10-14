@@ -9,6 +9,7 @@ import { getProjects } from '@/features/projects/api';
 import { projectKeys } from '@/features/projects/hooks';
 import {
   RANGE_LABELS,
+  RANGE_SHORT_LABELS,
   useDashboardUrlState,
   type DashboardRange,
 } from '../use-dashboard-url-state';
@@ -49,7 +50,8 @@ export function DashboardPage() {
           <>
             <Select
               aria-label="Project"
-              className="w-56"
+              // Same height as the pill beside it.
+              className="h-9.5 w-56"
               value={projectId ?? ALL_PROJECTS}
               onValueChange={(value) => update({ project: value === ALL_PROJECTS ? null : value })}
               options={[
@@ -61,12 +63,13 @@ export function DashboardPage() {
               ]}
             />
             <Segmented<DashboardRange>
+              variant="pill"
               label="Reported in"
               value={range}
               onChange={(next) => update({ range: next })}
-              options={(Object.keys(RANGE_LABELS) as DashboardRange[]).map((value) => ({
+              options={(Object.keys(RANGE_SHORT_LABELS) as DashboardRange[]).map((value) => ({
                 value,
-                label: RANGE_LABELS[value],
+                label: RANGE_SHORT_LABELS[value],
               }))}
             />
           </>
@@ -75,18 +78,10 @@ export function DashboardPage() {
 
       <SummaryTiles scope={scope} />
 
-      {/* The two compact blocks share a row; the ticket list gets the full width so Age and
-          Fails (the columns it exists for) are never cut off. */}
-      <div
-        className={
-          canSeePerformance
-            ? 'grid items-start gap-5 xl:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]'
-            : 'grid items-start gap-5 lg:grid-cols-[minmax(0,32rem)]'
-        }
-      >
-        <StatusBars scope={scope} />
-        {canSeePerformance && <DeveloperTable scope={scope} />}
-      </div>
+      {/* One full-width block per row: roles without the performance table get no empty gap
+          beside the status bars. */}
+      <StatusBars scope={scope} />
+      {canSeePerformance && <DeveloperTable scope={scope} />}
 
       <SlowestTickets
         scope={scope}

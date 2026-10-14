@@ -12,6 +12,15 @@ export const RANGE_LABELS: Record<DashboardRange, string> = {
   '30d': '30 days',
   '90d': '90 days',
 };
+
+/** The dashboard pill's labels, in the order it shows them. */
+export const RANGE_SHORT_LABELS: Record<DashboardRange, string> = {
+  '7d': '7d',
+  '30d': '30d',
+  '90d': '90d',
+  all: 'All',
+};
+
 const RANGE_DAYS: Record<Exclude<DashboardRange, 'all'>, number> = {
   '7d': 7,
   '30d': 30,

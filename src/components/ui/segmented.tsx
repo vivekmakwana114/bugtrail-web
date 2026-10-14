@@ -9,6 +9,8 @@ type SegmentedProps<T extends string> = {
   value: T;
   onChange: (value: T) => void;
   options: SegmentedOption<T>[];
+  /** 'pill': rounded track with mono labels, used only by the dashboard's filters. */
+  variant?: 'default' | 'pill';
   className?: string;
 };
 
@@ -21,14 +23,18 @@ export function Segmented<T extends string>({
   value,
   onChange,
   options,
+  variant = 'default',
   className,
 }: SegmentedProps<T>) {
+  const pill = variant === 'pill';
   return (
     <div
       role="group"
       aria-label={label}
       className={cn(
-        'inline-flex overflow-hidden rounded-md border border-line-strong bg-surface',
+        pill
+          ? 'inline-flex gap-0.5 rounded-full border border-line bg-surface p-1'
+          : 'inline-flex overflow-hidden rounded-md border border-line-strong bg-surface',
         className,
       )}
     >
@@ -39,8 +45,11 @@ export function Segmented<T extends string>({
           aria-pressed={value === option.value}
           onClick={() => onChange(option.value)}
           className={cn(
-            'px-3 py-1.5 text-sm whitespace-nowrap text-ink-2 hover:text-ink aria-pressed:bg-ink aria-pressed:text-bg',
-            i > 0 && 'border-l border-line-strong',
+            'whitespace-nowrap text-ink-2 hover:text-ink aria-pressed:bg-ink aria-pressed:text-bg',
+            pill
+              ? 'rounded-full px-4 py-1 font-mono text-sm transition-colors'
+              : 'px-3 py-1.5 text-sm',
+            !pill && i > 0 && 'border-l border-line-strong',
           )}
         >
           {option.label}
