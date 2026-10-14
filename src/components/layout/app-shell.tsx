@@ -29,7 +29,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-12 items-center gap-2 border-b border-line bg-bg px-4 lg:px-8">
+        <header className="sticky top-0 z-30 flex h-12 items-center gap-2 border-b border-line bg-bg px-4 lg:px-6">
           <MobileNav />
           <HomeLink className="lg:hidden">
             <Logo withWordmark={false} />
@@ -39,10 +39,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             <ProfileMenu />
           </div>
         </header>
+        {/* No max width: the page fills the column, and its gutter matches the top bar's so
+            the right edges of the cards and the profile menu line up. */}
         <main
           id="content"
           tabIndex={-1}
-          className="mx-auto grid w-full max-w-6xl content-start gap-6 px-4 py-6 lg:px-8"
+          className="grid w-full content-start gap-6 px-4 py-6 lg:px-6"
         >
           {children}
         </main>
