@@ -19,6 +19,8 @@ export const bugKeys = {
   lists: () => [...bugKeys.all, 'list'] as const,
   list: (projectId: string, filters: BugListFilters) =>
     [...bugKeys.lists(), projectId, filters] as const,
+  /** Under lists(), so every bug change that refreshes the grids refreshes this too. */
+  recent: (limit: number) => [...bugKeys.lists(), 'recent', limit] as const,
   modules: (projectId: string) => [...bugKeys.all, 'modules', projectId] as const,
   /** The bug page is addressed by key (CHK-142), so its cache is too. */
   detail: (bugKey: string) => [...bugKeys.all, 'detail', bugKey] as const,
@@ -37,6 +39,14 @@ export function useBugList(projectId: string, filters: BugListFilters) {
     initialPageParam: 1,
     getNextPageParam: (last) => (last.page < last.totalPages ? last.page + 1 : undefined),
     placeholderData: keepPreviousData,
+  });
+}
+
+/** The latest changed bugs across all your projects (the projects page's recent list). */
+export function useRecentBugs(limit: number) {
+  return useQuery({
+    queryKey: bugKeys.recent(limit),
+    queryFn: () => bugsApi.getRecentBugs(limit),
   });
 }
 

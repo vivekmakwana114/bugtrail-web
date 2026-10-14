@@ -18,6 +18,7 @@ import type { ProjectStatus } from '@/types/api';
 import { useProjectList } from '../hooks';
 import { CreateProjectDialog } from './create-project-dialog';
 import { ProjectCardMenu } from './project-card-menu';
+import { RecentBugs } from './recent-bugs';
 
 type StatusFilter = ProjectStatus | 'all';
 
@@ -196,6 +197,7 @@ export function ProjectsPage() {
             {list.isFetchingNextPage ? 'Loading…' : 'Show more projects'}
           </Button>
         )}
+        <RecentBugs />
       </ListPage>
       {canCreate && <CreateProjectDialog open={creating} onOpenChange={setCreating} />}
     </>

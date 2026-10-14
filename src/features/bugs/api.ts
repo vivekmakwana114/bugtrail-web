@@ -29,6 +29,14 @@ export async function getBugs(
   return data;
 }
 
+/** The latest changed bugs across every project you can see (no projectId: the API scopes it). */
+export async function getRecentBugs(limit: number): Promise<BugListItem[]> {
+  const { data } = await api.get<Page<BugListItem>>('/bugs', {
+    params: { sortBy: 'updatedAt:desc', limit },
+  });
+  return data.results;
+}
+
 /** Module/screen names already used in the project (for the filter and the report form). */
 export async function getProjectModules(projectId: string): Promise<string[]> {
   const { data } = await api.get<{ modules: string[] }>(`/projects/${projectId}/modules`);
