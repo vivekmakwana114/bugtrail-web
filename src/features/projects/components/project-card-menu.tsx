@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { MoreHorizontal, Pencil } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { MoreHorizontal, Pencil, Users } from 'lucide-react';
 import { toast } from 'sonner';
+import { usePermission } from '@/components/auth/can';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -12,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { routes } from '@/config/routes';
 import { getErrorMessage } from '@/lib/api-client';
 import type { ProjectListItem, ProjectStatus } from '@/types/api';
 import { useProject, useUpdateProject } from '../hooks';
@@ -21,12 +24,14 @@ import { EditProjectDialog } from './edit-project-dialog';
 const STATUSES = Object.keys(PROJECT_STATUS_LABELS) as ProjectStatus[];
 
 /**
- * The ⋯ on a project card (project:update): edit the project, or move it to another status in
- * one click. The API still decides; a refusal shows as a toast.
+ * The ⋯ on a project card (project:update): edit the project, open its members (Overview tab),
+ * or move it to another status in one click. The API still decides; a refusal shows as a toast.
  */
 export function ProjectCardMenu({ project }: { project: ProjectListItem }) {
   const [editing, setEditing] = useState(false);
   const updateProject = useUpdateProject(project);
+  const canManageMembers = usePermission('project:manage_members');
+  const router = useRouter();
 
   const setStatus = (status: ProjectStatus) =>
     updateProject.mutate(
@@ -58,6 +63,14 @@ export function ProjectCardMenu({ project }: { project: ProjectListItem }) {
             <Pencil aria-hidden />
             Edit project
           </DropdownMenuItem>
+          {canManageMembers && (
+            <DropdownMenuItem
+              onSelect={() => router.push(`${routes.project(project.key)}?tab=overview`)}
+            >
+              <Users aria-hidden />
+              Manage members
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuLabel>Move to</DropdownMenuLabel>
           {STATUSES.filter((status) => status !== project.status).map((status) => (

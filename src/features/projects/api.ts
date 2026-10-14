@@ -48,6 +48,43 @@ export async function updateProject(
 }
 
 /**
+ * Everyone who can join a project: active users with a role (the API refuses pending,
+ * suspended and rejected accounts). Only people with project:manage_members (PM, Admin) open
+ * the picker, and both can read the user list. One page of 100 is plenty for one team.
+ */
+export async function getMemberCandidates(): Promise<UserSummary[]> {
+  const { data } = await api.get<Page<UserSummary>>('/users', {
+    params: { status: 'active', sortBy: 'name:asc', limit: 100 },
+  });
+  return data.results.filter((user) => user.role !== null);
+}
+
+/** Adds people (already-members are fine: the API skips them). Returns the new member list. */
+export async function addProjectMembers(
+  projectId: string,
+  userIds: string[],
+): Promise<UserSummary[]> {
+  const { data } = await api.post<{ members: UserSummary[] }>(`/projects/${projectId}/members`, {
+    userIds,
+  });
+  return data.members;
+}
+
+/**
+ * Removes one person. The API refuses for the manager, and for anyone who still has open bugs
+ * assigned here (409, "Reassign them first"), so open work never quietly loses its owner.
+ */
+export async function removeProjectMember(
+  projectId: string,
+  userId: string,
+): Promise<UserSummary[]> {
+  const { data } = await api.delete<{ members: UserSummary[] }>(
+    `/projects/${projectId}/members/${userId}`,
+  );
+  return data.members;
+}
+
+/**
  * Everyone who could manage a project: active Admins and Project Managers (the roles with
  * project:manage_members, which the API requires of a manager). Only people who can edit a
  * project (PM, Admin) open this, and both can read the user list. One page is plenty for a team.
