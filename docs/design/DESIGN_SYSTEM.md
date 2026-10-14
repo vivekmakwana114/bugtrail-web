@@ -47,13 +47,13 @@ Status is shown as **colour + glyph**, never colour alone. Use `<StatusBadge sta
 
 - **Instrument Sans** (`font-sans`) for everything people read.
 - **IBM Plex Mono** (`font-mono`) for anything a machine produces: keys `CHK-142`, durations `6d 4h`, timestamps, counts. Mono gets tabular numbers automatically.
-- Scale (raised 2026-10-14 for readability): `text-xs` 13.5 · `text-sm` 14 · `text-md` 15 (body) · `text-lg` 17 · `text-xl` 20 (page title) · `text-2xl` 26 (at most once per screen) · `text-display` 48 (dashboard headline numbers only).
+- Scale (raised 2026-10-14 for readability): `text-xs` 13.5 · `text-sm` 14 · `text-md` 15 (body) · `text-lg` 17 · `text-xl` 20 (page title) · `text-2xl` 26 (at most once per screen) · `text-display` 48 (headline numbers only: dashboard tiles, project cards).
 - Small-caps labels (dashboard tiles): `font-mono text-xs uppercase tracking-widest text-ink-3`.
 - Hierarchy comes from size and weight, not from boxes.
 
 ## Shape and depth
 
-- Radii: `rounded-sm` (3px) for controls and badges, `rounded-md` (5px) for panels, cards and dialogs. Nothing rounder, except `rounded-full` on the ring chart, spinners and the dashboard's pill toggle (`<Segmented variant="pill">`).
+- Radii: `rounded-sm` (3px) for controls and badges, `rounded-md` (5px) for panels, cards and dialogs. Nothing rounder, except `rounded-full` on the ring chart, spinners and the pill toggles (`<Segmented variant="pill">`: dashboard filters, projects status tabs).
 - Separate with hairlines and spacing before reaching for a box.
 - One shadow, `shadow-pop`, only for things that float (menus, dialogs, toasts). `shadow-cursor` marks the keyboard cursor row.
 

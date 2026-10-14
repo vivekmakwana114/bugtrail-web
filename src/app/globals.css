@@ -101,14 +101,14 @@
   --text-xl--line-height: 1.75rem;
   --text-2xl: 1.625rem; /* 26: at most once per screen */
   --text-2xl--line-height: 2rem;
-  --text-display: 3rem; /* 48: the dashboard's headline numbers, nothing else */
+  --text-display: 3rem; /* 48: headline numbers (dashboard tiles, project cards), nothing else */
   --text-display--line-height: 1;
 
   /* Shape: two radii, hairlines, one shadow for things that float (menus, dialogs). */
   --radius-*: initial;
   --radius-sm: 3px;
   --radius-md: 5px;
-  --radius-full: 9999px; /* ring chart, spinners, the dashboard pill toggle */
+  --radius-full: 9999px; /* ring chart, spinners, pill toggles */
 
   --shadow-*: initial;
   --shadow-pop: var(--bt-shadow-pop);

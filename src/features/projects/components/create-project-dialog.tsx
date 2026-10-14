@@ -76,7 +76,7 @@ export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogP
       open={open}
       onOpenChange={close}
       title="New project"
-      description="Add members on the project page after it's created."
+      description="Add members from the project's Overview tab once it's created."
       submitLabel="Create project"
       pending={createProject.isPending}
       error={formError}

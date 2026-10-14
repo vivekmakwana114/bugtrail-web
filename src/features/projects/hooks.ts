@@ -7,7 +7,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import type { ProjectStatus } from '@/types/api';
+import type { ProjectDetail, ProjectStatus, UserSummary } from '@/types/api';
 import * as projectsApi from './api';
 
 export const PROJECTS_PAGE_SIZE = 24;
@@ -20,6 +20,7 @@ export const projectKeys = {
   /** By project key (BT), the same value the URL carries. */
   detail: (projectKey: string) => [...projectKeys.all, 'detail', projectKey] as const,
   managerCandidates: () => [...projectKeys.all, 'manager-candidates'] as const,
+  memberCandidates: () => [...projectKeys.all, 'member-candidates'] as const,
 };
 
 /**
@@ -70,6 +71,46 @@ export function useUpdateProject(target: { id: string; key: string }) {
       queryClient.setQueryData(projectKeys.detail(target.key), project);
       return queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
     },
+  });
+}
+
+/** Who can be added in the members dialog (active users with a role); fetched while it's open. */
+export function useMemberCandidates(enabled: boolean) {
+  return useQuery({
+    queryKey: projectKeys.memberCandidates(),
+    queryFn: projectsApi.getMemberCandidates,
+    staleTime: 60_000,
+    enabled,
+  });
+}
+
+/**
+ * After adding or removing members: the detail takes the API's new member list (no refetch), and
+ * the grids refetch because each card shows a member count.
+ */
+function useSetMembers(target: { key: string }) {
+  const queryClient = useQueryClient();
+  return (members: UserSummary[]) => {
+    queryClient.setQueryData<ProjectDetail>(projectKeys.detail(target.key), (project) =>
+      project ? { ...project, members } : project,
+    );
+    return queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+  };
+}
+
+export function useAddMembers(target: { id: string; key: string }) {
+  const setMembers = useSetMembers(target);
+  return useMutation({
+    mutationFn: (userIds: string[]) => projectsApi.addProjectMembers(target.id, userIds),
+    onSuccess: setMembers,
+  });
+}
+
+export function useRemoveMember(target: { id: string; key: string }) {
+  const setMembers = useSetMembers(target);
+  return useMutation({
+    mutationFn: (userId: string) => projectsApi.removeProjectMember(target.id, userId),
+    onSuccess: setMembers,
   });
 }
 
