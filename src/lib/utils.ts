@@ -24,7 +24,7 @@ const twMerge = extendTailwindMerge({
         'failed',
         'danger',
       ],
-      text: ['xs', 'sm', 'md', 'lg', 'xl', '2xl'],
+      text: ['xs', 'sm', 'md', 'lg', 'xl', '2xl', 'display'],
       radius: ['sm', 'md', 'full'],
       shadow: ['pop', 'cursor'],
     },
