@@ -75,18 +75,10 @@ export function DashboardPage() {
 
       <SummaryTiles scope={scope} />
 
-      {/* The two compact blocks share a row; the ticket list gets the full width so Age and
-          Fails (the columns it exists for) are never cut off. */}
-      <div
-        className={
-          canSeePerformance
-            ? 'grid items-start gap-5 xl:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]'
-            : 'grid items-start gap-5 lg:grid-cols-[minmax(0,32rem)]'
-        }
-      >
-        <StatusBars scope={scope} />
-        {canSeePerformance && <DeveloperTable scope={scope} />}
-      </div>
+      {/* One full-width block per row: roles without the performance table get no empty gap
+          beside the status bars. */}
+      <StatusBars scope={scope} />
+      {canSeePerformance && <DeveloperTable scope={scope} />}
 
       <SlowestTickets
         scope={scope}
