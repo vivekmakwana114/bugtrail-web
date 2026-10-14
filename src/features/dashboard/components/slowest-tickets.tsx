@@ -9,6 +9,7 @@ import { routes } from '@/config/routes';
 import { STATUS_META, TROUBLE_AGE_DAYS } from '@/config/statuses';
 import { formatDuration } from '@/lib/format';
 import { cn } from '@/lib/utils';
+import type { BugStatus } from '@/types/api';
 import { SLOWEST_LIMIT } from '../api';
 import { useSlowestTickets } from '../hooks';
 import type { DashboardScope, SlowTicket } from '../types';
@@ -16,6 +17,26 @@ import type { TicketsView } from '../use-dashboard-url-state';
 import { DashboardSection } from './dashboard-section';
 
 const AGED_MS = TROUBLE_AGE_DAYS * 24 * 60 * 60 * 1000;
+
+/*
+ * The line takes the ticket's status colour (same as Bugs by status), so where each ticket is
+ * stuck reads at a glance; age in trouble is carried by the red age number instead.
+ * Tailwind only generates classes it can see in full, so each one is spelled out.
+ */
+const LINE_CLASS: Record<BugStatus, string> = {
+  reported: 'bg-reported',
+  ongoing: 'bg-ongoing',
+  resolved: 'bg-resolved',
+  pass: 'bg-pass',
+  failed: 'bg-failed',
+};
+const RING_CLASS: Record<BugStatus, string> = {
+  reported: 'border-reported',
+  ongoing: 'border-ongoing',
+  resolved: 'border-resolved',
+  pass: 'border-pass',
+  failed: 'border-failed',
+};
 
 type SlowestTicketsProps = {
   scope: DashboardScope;
@@ -37,7 +58,7 @@ export function SlowestTickets({ scope, view, onViewChange }: SlowestTicketsProp
   return (
     <DashboardSection
       title="Longest lifelines"
-      note={`The ${SLOWEST_LIMIT} oldest tickets, by age since reported. Older than ${TROUBLE_AGE_DAYS} days is marked.`}
+      note={`The ${SLOWEST_LIMIT} oldest tickets, by age since reported. Ages past ${TROUBLE_AGE_DAYS} days are in red.`}
       actions={
         <Segmented
           variant="pill"
@@ -118,11 +139,11 @@ function Lifeline({
         {/* Shrinks before the meta does, so a full-length line never pushes it off the row. */}
         <span aria-hidden className="flex min-w-6 items-center" style={{ width: `${length}%` }}>
           <span className="size-1.5 shrink-0 rounded-full bg-ink-3" />
-          <span className={cn('h-0.5 flex-1', aged ? 'bg-danger' : 'bg-ink-2')} />
+          <span className={cn('h-0.5 flex-1', LINE_CLASS[bug.status])} />
           <span
             className={cn(
               'size-2.5 shrink-0 rounded-full border-2 bg-surface',
-              aged ? 'border-danger' : 'border-ink-2',
+              RING_CLASS[bug.status],
             )}
           />
         </span>
