@@ -64,6 +64,11 @@ export function ProjectsPage() {
   });
   const projects = list.data?.pages.flatMap((page) => page.results) ?? [];
   const total = list.data?.pages[0]?.totalResults ?? 0;
+  // Per-status numbers for the tabs (same search, any status); hidden until the first page lands.
+  const counts = list.data?.pages[0]?.counts;
+  const countFor = (value: StatusFilter) =>
+    counts &&
+    (value === 'all' ? counts.active + counts.completed + counts.archived : counts[value]);
   // The default view (Active, no search) isn't "filtered" from the user's point of view.
   const isDefaultView = status === 'active' && !search;
 
@@ -130,21 +135,25 @@ export function ProjectsPage() {
         toolbar={
           <>
             <Segmented
+              variant="pill"
               label="Project status"
               value={status}
               onChange={(value) => setUrl({ status: value })}
-              options={STATUS_OPTIONS}
+              options={STATUS_OPTIONS.map((option) => ({
+                ...option,
+                count: countFor(option.value),
+              }))}
             />
             <div className="relative w-full sm:w-64">
               <Search
-                className="pointer-events-none absolute top-2 left-2.5 size-4 text-ink-3"
+                className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-ink-3"
                 aria-hidden
               />
               <Input
                 type="search"
                 aria-label="Search projects by name or key"
                 placeholder="Search name or key"
-                className="pl-8"
+                className="h-9.5 pl-8"
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
                 onBlur={() => setUrl({})}

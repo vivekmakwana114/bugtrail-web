@@ -1,5 +1,5 @@
 import { api } from '@/lib/api-client';
-import type { Page, ProjectDetail, ProjectListItem, ProjectStatus, UserSummary } from '@/types/api';
+import type { Page, ProjectDetail, ProjectPage, ProjectStatus, UserSummary } from '@/types/api';
 
 export type ProjectListParams = {
   status?: ProjectStatus;
@@ -8,8 +8,8 @@ export type ProjectListParams = {
   limit?: number;
 };
 
-export async function getProjects(params: ProjectListParams): Promise<Page<ProjectListItem>> {
-  const { data } = await api.get<Page<ProjectListItem>>('/projects', {
+export async function getProjects(params: ProjectListParams): Promise<ProjectPage> {
+  const { data } = await api.get<ProjectPage>('/projects', {
     params: { sortBy: 'name:asc', ...params },
   });
   return data;

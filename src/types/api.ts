@@ -70,5 +70,8 @@ export type Page<T> = {
   totalResults: number;
 };
 
+/** GET /projects: a page of cards plus how many projects each status tab holds (same search). */
+export type ProjectPage = Page<ProjectListItem> & { counts: Record<ProjectStatus, number> };
+
 /** Milliseconds spent in each status, from the bug's activity log (pass stops the clock). */
 export type TimeInStatus = Record<Exclude<BugStatus, 'pass'>, number>;

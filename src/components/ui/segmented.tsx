@@ -2,14 +2,19 @@
 
 import { cn } from '@/lib/utils';
 
-export type SegmentedOption<T extends string> = { value: T; label: string };
+export type SegmentedOption<T extends string> = {
+  value: T;
+  label: string;
+  /** Shown after the label in mono (how many items the choice holds). */
+  count?: number;
+};
 
 type SegmentedProps<T extends string> = {
   label: string;
   value: T;
   onChange: (value: T) => void;
   options: SegmentedOption<T>[];
-  /** 'pill': rounded track with mono labels, used only by the dashboard's filters. */
+  /** 'pill': rounded track, used by the dashboard filters and the projects status tabs. */
   variant?: 'default' | 'pill';
   className?: string;
 };
@@ -45,14 +50,19 @@ export function Segmented<T extends string>({
           aria-pressed={value === option.value}
           onClick={() => onChange(option.value)}
           className={cn(
-            'whitespace-nowrap text-ink-2 hover:text-ink aria-pressed:bg-ink aria-pressed:text-bg',
-            pill
-              ? 'rounded-full px-4 py-1 font-mono text-sm transition-colors'
-              : 'px-3 py-1.5 text-sm',
+            'group inline-flex items-baseline gap-2 text-sm whitespace-nowrap text-ink-2 hover:text-ink aria-pressed:bg-ink aria-pressed:text-bg',
+            pill ? 'rounded-full px-4 py-1 transition-colors' : 'px-3 py-1.5',
+            // Short codes (7d, 30d) read as values, so they're mono; words with a count aren't.
+            pill && option.count === undefined && 'font-mono',
             !pill && i > 0 && 'border-l border-line-strong',
           )}
         >
           {option.label}
+          {option.count !== undefined && (
+            <span className="font-mono text-xs text-ink-3 group-aria-pressed:text-bg">
+              {option.count}
+            </span>
+          )}
         </button>
       ))}
     </div>

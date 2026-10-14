@@ -53,7 +53,7 @@ Status is shown as **colour + glyph**, never colour alone. Use `<StatusBadge sta
 
 ## Shape and depth
 
-- Radii: `rounded-sm` (3px) for controls and badges, `rounded-md` (5px) for panels, cards and dialogs. Nothing rounder, except `rounded-full` on the ring chart, spinners and the dashboard's pill toggle (`<Segmented variant="pill">`).
+- Radii: `rounded-sm` (3px) for controls and badges, `rounded-md` (5px) for panels, cards and dialogs. Nothing rounder, except `rounded-full` on the ring chart, spinners and the pill toggles (`<Segmented variant="pill">`: dashboard filters, projects status tabs).
 - Separate with hairlines and spacing before reaching for a box.
 - One shadow, `shadow-pop`, only for things that float (menus, dialogs, toasts). `shadow-cursor` marks the keyboard cursor row.
 
