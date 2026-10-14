@@ -17,6 +17,7 @@ import { useDebouncedValue } from '@/lib/use-debounced-value';
 import type { ProjectStatus } from '@/types/api';
 import { useProjectList } from '../hooks';
 import { CreateProjectDialog } from './create-project-dialog';
+import { ProjectCardMenu } from './project-card-menu';
 
 type StatusFilter = ProjectStatus | 'all';
 
@@ -39,6 +40,7 @@ export function ProjectsPage() {
   const pathname = usePathname();
   const params = useSearchParams();
   const canCreate = usePermission('project:create');
+  const canUpdate = usePermission('project:update');
   const [creating, setCreating] = useState(false);
 
   const statusParam = params.get('status');
@@ -173,11 +175,16 @@ export function ProjectsPage() {
         empty={empty}
       >
         <div
-          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
           aria-busy={list.isPlaceholderData}
         >
           {projects.map((project) => (
-            <ProjectCard key={project.id} project={project} href={routes.project(project.key)} />
+            <ProjectCard
+              key={project.id}
+              project={project}
+              href={routes.project(project.key)}
+              menu={canUpdate && <ProjectCardMenu project={project} />}
+            />
           ))}
         </div>
         {list.hasNextPage && (
@@ -198,19 +205,24 @@ export function ProjectsPage() {
 /** Six card-shaped placeholders, the same size as real cards so nothing jumps when they arrive. */
 function ProjectGridSkeleton() {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {Array.from({ length: 6 }, (_, i) => (
-        <div key={i} className="grid gap-3.5 rounded-md border border-line bg-surface p-4">
-          <Skeleton className="h-5 w-2/3" />
-          <div className="grid grid-cols-[auto_1fr] items-center gap-4 rounded-sm bg-sunken p-3">
-            <Skeleton className="size-24 rounded-full bg-line" />
-            <div className="grid gap-2">
-              <Skeleton className="h-3.5 bg-line" />
-              <Skeleton className="h-3.5 bg-line" />
-              <Skeleton className="h-3.5 bg-line" />
+        <div key={i} className="grid gap-4 rounded-md border border-line bg-surface p-5">
+          <div className="flex items-center gap-3">
+            <Skeleton className="size-10" />
+            <div className="grid flex-1 gap-1.5">
+              <Skeleton className="h-5 w-2/3" />
+              <Skeleton className="h-3.5 w-1/2" />
             </div>
           </div>
-          <Skeleton className="h-3 w-1/2" />
+          <Skeleton className="h-12 w-1/3" />
+          <Skeleton className="h-2" />
+          <div className="grid grid-cols-3 gap-2">
+            {Array.from({ length: 3 }, (_, j) => (
+              <Skeleton key={j} className="h-16" />
+            ))}
+          </div>
+          <Skeleton className="h-4 w-1/2" />
         </div>
       ))}
     </div>

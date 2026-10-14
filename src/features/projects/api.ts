@@ -35,7 +35,13 @@ export async function createProject(input: {
  */
 export async function updateProject(
   projectId: string,
-  input: { name: string; description: string; status: ProjectStatus; manager: string | null },
+  // A PATCH: send only what changes (the card's status menu sends just `status`).
+  input: Partial<{
+    name: string;
+    description: string;
+    status: ProjectStatus;
+    manager: string | null;
+  }>,
 ): Promise<ProjectDetail> {
   const { data } = await api.patch<ProjectDetail>(`/projects/${projectId}`, input);
   return data;

@@ -1,75 +1,136 @@
+import type { ReactNode } from 'react';
 import Link from 'next/link';
+import { ArrowRight, Check } from 'lucide-react';
 import type { ProjectListItem } from '@/types/api';
-import { TROUBLE_AGE_DAYS } from '@/config/statuses';
+import { STATUS_META, TROUBLE_AGE_DAYS } from '@/config/statuses';
 import { formatCount, formatRelative } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import { StatusGlyph } from './status-glyph';
-import { StatusRing } from './status-ring';
 
 type ProjectCardProps = {
   project: ProjectListItem;
   href: string;
+  /** The ⋯ actions menu, for roles that can change the project. */
+  menu?: ReactNode;
 };
 
-const LEGEND = [
-  { key: 'reported', label: 'Reported', swatch: 'bg-reported' },
-  { key: 'ongoing', label: 'Ongoing', swatch: 'bg-ongoing' },
-  { key: 'resolved', label: 'Resolved', swatch: 'bg-resolved' },
+/*
+ * The card's three slices, in lifecycle order. Ongoing counts failed bugs too (back with a
+ * developer) and Resolved counts passed ones, as the API's `pie` does. Colours and glyphs are the
+ * same as Bugs by status on the dashboard. Class names are spelled out for Tailwind.
+ */
+const SLICES = [
+  { key: 'reported', bar: 'bg-reported' },
+  { key: 'ongoing', bar: 'bg-ongoing' },
+  { key: 'resolved', bar: 'bg-resolved' },
 ] as const;
 
 /**
- * One project on the projects grid. Five-second test: you can tell which project is in trouble.
- * The trouble line is the only accent colour on the card.
+ * One project on the projects grid. Five-second test: how much is open, how far along it is,
+ * and whether anything is in trouble (the only red on the card).
+ * Not one big link: the ⋯ menu can't live inside a link, so the name and "Open board" are links.
  */
-export function ProjectCard({ project, href }: ProjectCardProps) {
+export function ProjectCard({ project, href, menu }: ProjectCardProps) {
   const { bugSummary } = project;
+  const { pie, total, open, agedOpen } = bugSummary;
   const failing = bugSummary.byStatus.failed;
-  const { agedOpen } = bugSummary;
   const trouble = [
     failing > 0 && `${failing} failed QA`,
     agedOpen > 0 && `${agedOpen} open > ${TROUBLE_AGE_DAYS}d`,
   ].filter(Boolean);
+  const share = (n: number) => (total ? (n / total) * 100 : 0);
 
   return (
-    <Link
-      href={href}
-      className="grid gap-3.5 rounded-md border border-line bg-surface p-4 transition-colors hover:border-line-strong motion-reduce:transition-none"
+    <article
+      aria-label={project.name}
+      className="grid content-start gap-4 rounded-md border border-line bg-surface p-5 transition-colors hover:border-line-strong motion-reduce:transition-none"
     >
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="min-w-0 text-lg font-semibold [overflow-wrap:anywhere]">
-          {project.name}
+      <header className="flex items-start gap-3">
+        <span className="flex h-10 min-w-10 shrink-0 items-center justify-center rounded-md bg-sunken px-2 font-mono text-sm font-semibold text-ink-2">
+          {project.key}
         </span>
-        <span className="font-mono text-xs text-ink-3">{project.key}</span>
+        <div className="grid min-w-0 flex-1 gap-0.5">
+          <Link
+            href={href}
+            className="truncate text-lg font-semibold text-ink hover:underline"
+            title={project.name}
+          >
+            {project.name}
+          </Link>
+          <span className="truncate text-sm text-ink-3">
+            {project.memberCount} {project.memberCount === 1 ? 'member' : 'members'} · updated{' '}
+            {formatRelative(project.updatedAt)}
+          </span>
+        </div>
+        {menu}
+      </header>
+
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <p className="flex items-baseline gap-2">
+          <span className="text-display font-semibold tracking-tight text-ink tabular-nums">
+            {formatCount(open)}
+          </span>
+          <span className="text-sm text-ink-3">open of {formatCount(total)}</span>
+        </p>
+        <span className="font-mono text-sm text-ink-3">
+          {total ? `${Math.round(share(pie.resolved))}% resolved` : 'no bugs yet'}
+        </span>
       </div>
 
-      <div className="grid grid-cols-[auto_1fr] items-center gap-4 rounded-sm bg-sunken p-3">
-        <StatusRing pie={bugSummary.pie} open={bugSummary.open} />
-        <dl className="grid gap-1 text-sm">
-          {LEGEND.map(({ key, label, swatch }) => (
-            <div key={key} className="grid grid-cols-[0.625rem_1fr_auto] items-center gap-2">
-              <span className={`size-2.5 rounded-sm ${swatch}`} aria-hidden />
-              <dt className="text-ink-2">{label}</dt>
-              <dd className="font-mono text-ink">{formatCount(bugSummary.pie[key])}</dd>
-            </div>
-          ))}
-        </dl>
+      {/* Stacked to scale; the exact numbers are in the boxes below, so the bar is decorative. */}
+      <div aria-hidden className="flex h-2 gap-0.5 overflow-hidden rounded-sm bg-sunken">
+        {SLICES.map(({ key, bar }) =>
+          pie[key] ? (
+            <span key={key} className={bar} style={{ width: `${share(pie[key])}%` }} />
+          ) : null,
+        )}
       </div>
 
-      <div className="flex flex-wrap justify-between gap-2 text-xs">
+      <dl className="grid grid-cols-3 gap-2">
+        {SLICES.map(({ key }) => (
+          // The glyph sits with the number, so the label gets the box's full width on phones.
+          <div key={key} className="grid gap-1 rounded-md bg-sunken px-3 py-2.5">
+            <dt className="truncate text-sm text-ink-2">{STATUS_META[key].label}</dt>
+            <dd
+              className={cn(
+                'flex items-center gap-1.5 font-mono text-lg font-semibold',
+                pie[key] ? 'text-ink' : 'text-ink-3',
+              )}
+            >
+              <StatusGlyph status={key} />
+              {formatCount(pie[key])}
+            </dd>
+          </div>
+        ))}
+      </dl>
+
+      <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-4 text-sm">
         {trouble.length > 0 ? (
           <span className="inline-flex items-center gap-1.5 font-semibold text-danger">
             <StatusGlyph status="failed" />
             {trouble.join(' · ')}
           </span>
         ) : (
-          <span className="text-ink-3">
-            {bugSummary.total ? 'Nothing failing or ageing' : 'No bugs reported yet'}
+          <span className="inline-flex items-center gap-1.5 text-ink-3">
+            {total ? (
+              <>
+                <Check className="size-4" aria-hidden />
+                Nothing failing or ageing
+              </>
+            ) : (
+              'No bugs reported yet'
+            )}
           </span>
         )}
-        <span className="text-ink-3">
-          {project.memberCount} {project.memberCount === 1 ? 'member' : 'members'} ·{' '}
-          {formatRelative(project.updatedAt)}
-        </span>
-      </div>
-    </Link>
+        <Link
+          href={href}
+          className="inline-flex items-center gap-1.5 font-semibold text-ink hover:underline"
+          aria-label={`Open the ${project.name} board`}
+        >
+          Open board
+          <ArrowRight className="size-4" aria-hidden />
+        </Link>
+      </footer>
+    </article>
   );
 }
