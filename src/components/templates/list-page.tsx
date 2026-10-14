@@ -41,7 +41,9 @@ export function ListPage({
   children,
 }: ListPageProps) {
   return (
-    <div className="grid gap-5">
+    // minmax(0,1fr): a wide child (a pill, a table) can't stretch the column past the screen;
+    // it fits or scrolls inside itself instead.
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <PageHeader
         title={title}
         description={description}

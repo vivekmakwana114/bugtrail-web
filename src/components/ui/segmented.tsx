@@ -38,7 +38,8 @@ export function Segmented<T extends string>({
       aria-label={label}
       className={cn(
         pill
-          ? 'inline-flex gap-0.5 rounded-full border border-line bg-surface p-1'
+          ? // max-w-full + overflow: on a phone a wide pill scrolls inside itself, not the page.
+            'inline-flex max-w-full gap-0.5 overflow-x-auto rounded-full border border-line bg-surface p-1'
           : 'inline-flex overflow-hidden rounded-md border border-line-strong bg-surface',
         className,
       )}
@@ -51,7 +52,7 @@ export function Segmented<T extends string>({
           onClick={() => onChange(option.value)}
           className={cn(
             'group inline-flex items-baseline gap-2 text-sm whitespace-nowrap text-ink-2 hover:text-ink aria-pressed:bg-ink aria-pressed:text-bg',
-            pill ? 'rounded-full px-4 py-1 transition-colors' : 'px-3 py-1.5',
+            pill ? 'shrink-0 rounded-full px-3 py-1 transition-colors sm:px-4' : 'px-3 py-1.5',
             // Short codes (7d, 30d) read as values, so they're mono; words with a count aren't.
             pill && option.count === undefined && 'font-mono',
             !pill && i > 0 && 'border-l border-line-strong',
