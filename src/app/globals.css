@@ -108,7 +108,7 @@
   --radius-*: initial;
   --radius-sm: 3px;
   --radius-md: 5px;
-  --radius-full: 9999px; /* ring chart, spinners, pill toggles */
+  --radius-full: 9999px; /* status rings and dots, spinners, pill toggles */
 
   --shadow-*: initial;
   --shadow-pop: var(--bt-shadow-pop);

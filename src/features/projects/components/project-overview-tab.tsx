@@ -1,152 +1,210 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Pencil, UserPlus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { usePermission } from '@/components/auth/can';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { StatusGlyph } from '@/components/shared/status-glyph';
-import { StatusRing } from '@/components/shared/status-ring';
-import { DetailSection } from '@/components/templates/detail-page';
-import { BUG_STATUSES, STATUS_META, TROUBLE_AGE_DAYS } from '@/config/statuses';
+import { TROUBLE_AGE_DAYS } from '@/config/statuses';
 import { roleWithDesignation } from '@/config/roles';
-import { formatCount, formatRelative } from '@/lib/format';
+import { formatCount, formatDate, formatRelative } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import type { ProjectDetail, UserSummary } from '@/types/api';
 import { useRemoveMember } from '../hooks';
 import { PROJECT_STATUS_LABELS } from '../schemas';
 import { AddMembersDialog } from './add-members-dialog';
 import { EditProjectDialog } from './edit-project-dialog';
+import { StatusFlow } from './status-flow';
 
 /**
- * The project's Overview tab: what it is, how its bugs stand, and who's on it. People who can
- * edit projects (PM, Admin) get "Edit project" here: name, description, manager, status
- * (archiving included), and add or remove members. The page header, tabs and loading/error
- * states live in ProjectPage.
+ * The project's Overview tab: how its bugs stand first (a flow across the full width), then what
+ * the project is and who's on it (two cards of equal height). People who can edit projects (PM,
+ * Admin) get "Edit project" (name, description, manager, status) and add or remove members
+ * here. The page header, tabs and loading/error states live in ProjectPage.
  */
-export function ProjectOverviewTab({ project: p }: { project: ProjectDetail }) {
+export function ProjectOverviewTab({ project }: { project: ProjectDetail }) {
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
+      <BugsCard project={project} />
+      <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_24rem]">
+        <AboutCard project={project} />
+        <MembersCard project={project} />
+      </div>
+    </div>
+  );
+}
+
+/** The frame every block on this tab shares: title (and count) on the left, an action right. */
+function Card({
+  title,
+  count,
+  action,
+  label,
+  className,
+  children,
+}: {
+  title: string;
+  count?: number;
+  action?: ReactNode;
+  /** Accessible name when it differs from the title. */
+  label?: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section
+      aria-label={label ?? title}
+      className={cn(
+        'grid min-w-0 content-start gap-4 rounded-md border border-line bg-surface p-5',
+        className,
+      )}
+    >
+      <div className="flex min-h-8 items-center justify-between gap-3">
+        <h2 className="flex items-baseline gap-2 text-lg font-semibold">
+          {title}
+          {count !== undefined && (
+            <span className="font-mono text-sm font-normal text-ink-3">{formatCount(count)}</span>
+          )}
+        </h2>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function AboutCard({ project: p }: { project: ProjectDetail }) {
   const canEdit = usePermission('project:update');
   const [editing, setEditing] = useState(false);
+  const { total, open } = p.bugSummary;
+
   return (
-    <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_24rem]">
-      <div className="grid min-w-0 gap-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <p className={p.description ? 'max-w-prose text-md text-ink' : 'text-sm text-ink-3'}>
-            {p.description || 'No description yet.'}
-          </p>
-          {canEdit && (
-            <Button onClick={() => setEditing(true)}>
-              <Pencil aria-hidden />
-              Edit project
-            </Button>
+    <Card
+      title="About this project"
+      action={
+        canEdit && (
+          <Button size="sm" onClick={() => setEditing(true)}>
+            <Pencil aria-hidden />
+            Edit project
+          </Button>
+        )
+      }
+    >
+      <p className={p.description ? 'max-w-prose text-md text-ink' : 'text-sm text-ink-3'}>
+        {p.description || 'No description yet.'}
+      </p>
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 border-t border-line pt-4 sm:grid-cols-3">
+        <Fact label="Status">
+          <span className="inline-flex rounded-sm border border-line-strong px-2 py-0.5 text-sm">
+            {PROJECT_STATUS_LABELS[p.status]}
+          </span>
+        </Fact>
+        <Fact label="Manager">
+          {p.manager ? (
+            <span className="inline-flex min-w-0 items-center gap-2">
+              <Avatar name={p.manager.name} src={p.manager.avatarUrl} />
+              <span className="truncate">{p.manager.name}</span>
+            </span>
+          ) : (
+            <span className="text-ink-3">Not set</span>
           )}
-        </div>
-        <dl className="flex flex-wrap gap-x-8 gap-y-2 text-sm">
-          <Fact label="Status" value={PROJECT_STATUS_LABELS[p.status]} />
-          <Fact label="Manager" value={p.manager?.name ?? 'Not set'} />
-          <Fact label="Updated" value={formatRelative(p.updatedAt)} mono />
-        </dl>
-        <BugOverview project={p} />
-      </div>
+        </Fact>
+        <Fact label="Key">
+          <span className="font-mono">{p.key}</span>
+        </Fact>
+        <Fact label="Bugs">
+          <span className="font-mono">{formatCount(total)}</span>
+          <span className="text-ink-3"> reported · </span>
+          <span className="font-mono">{formatCount(open)}</span>
+          <span className="text-ink-3"> open</span>
+        </Fact>
+        <Fact label="Created">
+          <span className="font-mono">{formatDate(p.createdAt)}</span>
+        </Fact>
+        <Fact label="Updated">
+          <span className="font-mono">{formatRelative(p.updatedAt)}</span>
+        </Fact>
+      </dl>
       {canEdit && <EditProjectDialog project={p} open={editing} onOpenChange={setEditing} />}
-      <aside aria-label="Members" className="rounded-md border border-line bg-surface">
-        <MemberList project={p} />
-      </aside>
-    </div>
+    </Card>
   );
 }
 
-function Fact({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="grid gap-0.5">
-      <dt className="text-xs text-ink-3">{label}</dt>
-      <dd className={mono ? 'font-mono' : undefined}>{value}</dd>
+    <div className="grid min-w-0 content-start gap-1">
+      <dt className="font-mono text-xs tracking-widest text-ink-3 uppercase">{label}</dt>
+      <dd className="min-w-0 text-md">{children}</dd>
     </div>
   );
 }
 
-function BugOverview({ project }: { project: ProjectDetail }) {
+function BugsCard({ project }: { project: ProjectDetail }) {
   const { bugSummary } = project;
-  const failing = bugSummary.byStatus.failed;
   return (
-    <DetailSection title="Bugs">
+    <Card title="Bugs" count={bugSummary.total} label="Bugs by stage">
       {bugSummary.total === 0 ? (
-        <p className="text-sm text-ink-2">No bugs reported in this project yet.</p>
+        <p className="text-sm text-ink-3">No bugs reported in this project yet.</p>
       ) : (
-        <div className="flex flex-wrap items-center gap-6">
-          <StatusRing pie={bugSummary.pie} open={bugSummary.open} size={112} />
-          <dl className="grid min-w-56 gap-1.5 text-sm">
-            {BUG_STATUSES.map((status) => (
-              <div key={status} className="grid grid-cols-[1rem_1fr_auto] items-center gap-2">
-                <StatusGlyph status={status} />
-                <dt className="text-ink-2">{STATUS_META[status].label}</dt>
-                <dd className="font-mono">{formatCount(bugSummary.byStatus[status])}</dd>
-              </div>
-            ))}
-          </dl>
-          {(failing > 0 || bugSummary.agedOpen > 0) && (
-            <p className="grid gap-1 text-sm font-semibold text-danger">
-              {failing > 0 && (
-                <span>
-                  {failing} failed QA and {failing === 1 ? 'needs' : 'need'} another look
-                </span>
-              )}
-              {bugSummary.agedOpen > 0 && (
-                <span>
-                  {bugSummary.agedOpen} open for more than {TROUBLE_AGE_DAYS} days
-                </span>
-              )}
+        <>
+          <div className="mx-auto w-full max-w-4xl">
+            <StatusFlow byStatus={bugSummary.byStatus} />
+          </div>
+          {bugSummary.agedOpen > 0 && (
+            <p className="text-center text-sm font-semibold text-danger">
+              {formatCount(bugSummary.agedOpen)} open for more than {TROUBLE_AGE_DAYS} days
             </p>
           )}
-        </div>
+        </>
       )}
-    </DetailSection>
+    </Card>
   );
 }
 
 /**
  * Who's on the project. With project:manage_members (PM, Admin): add people, and remove anyone
  * but the manager (change the manager first). The API also refuses to remove someone with open
- * bugs assigned here; that reason shows in the confirm dialog as-is.
+ * bugs assigned here; that reason shows in the confirm dialog as-is. A long list scrolls inside
+ * the card, so the card keeps the About card's height.
  */
-function MemberList({ project }: { project: ProjectDetail }) {
+function MembersCard({ project }: { project: ProjectDetail }) {
   const canManage = usePermission('project:manage_members');
   const removeMember = useRemoveMember(project);
   const [adding, setAdding] = useState(false);
   const [removing, setRemoving] = useState<UserSummary | null>(null);
 
   return (
-    <div className="grid gap-3 p-4">
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="flex items-baseline gap-2 text-md font-semibold">
-          Members
-          <span className="font-mono text-xs font-normal text-ink-3">{project.members.length}</span>
-        </h2>
-        {canManage && (
+    <Card
+      title="Members"
+      count={project.members.length}
+      action={
+        canManage && (
           <Button size="sm" onClick={() => setAdding(true)}>
             <UserPlus aria-hidden />
             Add members
           </Button>
-        )}
-      </div>
+        )
+      }
+    >
       {project.members.length === 0 ? (
-        <p className="text-sm text-ink-2">
+        <p className="text-sm text-ink-3">
           {canManage
             ? 'Nobody yet. Add the team so they can see the project and its bugs.'
             : 'Nobody yet. A Project Manager or an Admin adds the team.'}
         </p>
       ) : (
-        <ul className="grid gap-1">
+        <ul className="-mx-2 grid max-h-80 content-start gap-0.5 overflow-y-auto px-2">
           {project.members.map((member) => {
             const isManager = project.manager?.id === member.id;
             return (
-              <li key={member.id} className="flex items-center gap-2.5 py-1">
+              <li key={member.id} className="flex items-center gap-3 py-1.5">
                 <Avatar name={member.name} src={member.avatarUrl} size="md" />
                 <span className="grid min-w-0 flex-1">
-                  <span className="truncate text-sm">
+                  <span className="truncate text-sm font-medium">
                     {member.name}
-                    {isManager && <span className="text-ink-3"> · manager</span>}
+                    {isManager && <span className="font-normal text-ink-3"> · manager</span>}
                   </span>
                   <span className="truncate text-xs text-ink-3">
                     {roleWithDesignation(member.role, member.designation)}
@@ -187,6 +245,6 @@ function MemberList({ project }: { project: ProjectDetail }) {
           />
         </>
       )}
-    </div>
+    </Card>
   );
 }
