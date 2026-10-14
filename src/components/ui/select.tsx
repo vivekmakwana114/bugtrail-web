@@ -49,7 +49,11 @@ export function Select({
         )}
         {...aria}
       >
-        <SelectPrimitive.Value placeholder={placeholder} />
+        {/* One line: a long label (name · role · designation) truncates instead of wrapping
+            out of the fixed-height trigger. */}
+        <span className="min-w-0 truncate">
+          <SelectPrimitive.Value placeholder={placeholder} />
+        </span>
         <SelectPrimitive.Icon>
           <ChevronDown className="size-4 text-ink-3" aria-hidden />
         </SelectPrimitive.Icon>
