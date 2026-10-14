@@ -1,12 +1,13 @@
 'use client';
 
+import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { Avatar } from '@/components/ui/avatar';
 import { Segmented } from '@/components/ui/segmented';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusGlyph } from '@/components/shared/status-glyph';
 import { routes } from '@/config/routes';
-import { STATUS_META, TROUBLE_AGE_DAYS } from '@/config/statuses';
+import { STATUS_META } from '@/config/statuses';
 import { formatDuration } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { BugStatus } from '@/types/api';
@@ -16,13 +17,18 @@ import type { DashboardScope, SlowTicket } from '../types';
 import type { TicketsView } from '../use-dashboard-url-state';
 import { DashboardSection } from './dashboard-section';
 
-const AGED_MS = TROUBLE_AGE_DAYS * 24 * 60 * 60 * 1000;
-
 /*
- * The line takes the ticket's status colour (same as Bugs by status), so where each ticket is
- * stuck reads at a glance; age in trouble is carried by the red age number instead.
+ * The line shows how far the ticket has got: its length is the stage (Pass and Failed, the QA
+ * verdicts, are the full line) and its colour is the status, same as Bugs by status.
  * Tailwind only generates classes it can see in full, so each one is spelled out.
  */
+const STAGE_LENGTH: Record<BugStatus, number> = {
+  reported: 25,
+  ongoing: 50,
+  resolved: 75,
+  pass: 100,
+  failed: 100,
+};
 const LINE_CLASS: Record<BugStatus, string> = {
   reported: 'bg-reported',
   ongoing: 'bg-ongoing',
@@ -46,19 +52,18 @@ type SlowestTicketsProps = {
 
 /**
  * The oldest tickets by age (reported until passed, or until now), each drawn as a lifeline
- * scaled to the oldest one, so "how much older" reads at a glance. "Open" leaves out passed
- * ones: those are the tickets someone should look at today.
+ * that grows with its stage. "Open" leaves out passed ones: those are the tickets someone
+ * should look at today.
  */
 export function SlowestTickets({ scope, view, onViewChange }: SlowestTicketsProps) {
   const tickets = useSlowestTickets(scope, view === 'open');
   const rows = tickets.data ?? [];
   const showProject = !scope.projectId;
-  const maxAge = Math.max(1, ...rows.map((bug) => bug.ageMs));
 
   return (
     <DashboardSection
       title="Longest lifelines"
-      note={`The ${SLOWEST_LIMIT} oldest tickets, by age since reported. Ages past ${TROUBLE_AGE_DAYS} days are in red.`}
+      note={`The ${SLOWEST_LIMIT} oldest tickets, by age since reported. The line grows with each stage.`}
       actions={
         <Segmented
           variant="pill"
@@ -89,7 +94,7 @@ export function SlowestTickets({ scope, view, onViewChange }: SlowestTicketsProp
       ) : (
         <ul aria-label="Longest lifelines" className="grid">
           {rows.map((bug) => (
-            <Lifeline key={bug.id} bug={bug} maxAge={maxAge} showProject={showProject} />
+            <Lifeline key={bug.id} bug={bug} showProject={showProject} />
           ))}
         </ul>
       )}
@@ -98,18 +103,8 @@ export function SlowestTickets({ scope, view, onViewChange }: SlowestTicketsProp
 }
 
 /** One ticket: key, title and age on top; under it the line, then who has it, its status and fails. */
-function Lifeline({
-  bug,
-  maxAge,
-  showProject,
-}: {
-  bug: SlowTicket;
-  maxAge: number;
-  showProject: boolean;
-}) {
-  const aged = bug.ageMs > AGED_MS;
-  // A floor so the youngest ticket still shows a line, not just its two end dots.
-  const length = Math.max((bug.ageMs / maxAge) * 100, 4);
+function Lifeline({ bug, showProject }: { bug: SlowTicket; showProject: boolean }) {
+  const length = STAGE_LENGTH[bug.status];
 
   return (
     <li className="grid gap-2.5 border-t border-line py-3.5 first:border-t-0 first:pt-0 last:pb-0">
@@ -125,19 +120,20 @@ function Lifeline({
         {showProject && (
           <span className="hidden shrink-0 text-sm text-ink-3 sm:inline">{bug.project.name}</span>
         )}
-        <span
-          className={cn(
-            'ml-auto shrink-0 font-mono text-lg font-semibold',
-            aged ? 'text-danger' : 'text-ink',
-          )}
-        >
+        <span className="ml-auto shrink-0 font-mono text-lg font-semibold text-ink">
           {formatDuration(bug.ageMs)}
         </span>
       </div>
 
       <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 sm:flex-nowrap">
-        {/* Shrinks before the meta does, so a full-length line never pushes it off the row. */}
-        <span aria-hidden className="flex min-w-6 items-center" style={{ width: `${length}%` }}>
+        {/* Every line is a share of the same track: the row minus room kept for the meta, so
+            the stages line up across rows. On phones the meta wraps below, so the track is the
+            full row. The line can still shrink if a long name needs more room. */}
+        <span
+          aria-hidden
+          className="flex w-[calc(100%*var(--stage))] min-w-6 items-center sm:w-[calc((100%-22rem)*var(--stage))]"
+          style={{ '--stage': length / 100 } as CSSProperties}
+        >
           <span className="size-1.5 shrink-0 rounded-full bg-ink-3" />
           <span className={cn('h-0.5 flex-1', LINE_CLASS[bug.status])} />
           <span
