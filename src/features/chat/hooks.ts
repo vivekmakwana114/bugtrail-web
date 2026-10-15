@@ -7,6 +7,7 @@ import {
   type InfiniteData,
   type QueryClient,
 } from '@tanstack/react-query';
+import { useSocket } from '@/providers/socket-provider';
 import * as chatApi from './api';
 import type { ChatMessage, MessagePage } from './types';
 
@@ -20,14 +21,17 @@ type Thread = InfiniteData<MessagePage, string | undefined>;
 /**
  * The bug's chat. Page 1 is the latest 30; each further page is older (cursor = `before`).
  * Messages don't go stale on their own: new ones arrive through the socket (see useBugRoom).
+ * Polling while the socket is down is only the fallback, like the notification bell.
  */
 export function useMessages(bugId: string) {
+  const { connected } = useSocket();
   return useInfiniteQuery({
     queryKey: chatKeys.messages(bugId),
     queryFn: ({ pageParam }) => chatApi.getMessages(bugId, pageParam),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.nextCursor ?? undefined,
     staleTime: Infinity,
+    refetchInterval: connected ? false : 15_000,
   });
 }
 
