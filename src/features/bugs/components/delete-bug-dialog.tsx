@@ -13,7 +13,7 @@ type DeleteBugDialogProps = {
   onOpenChange: (open: boolean) => void;
 };
 
-/** Admin only (bug:delete). A soft delete: gone from lists and counts, history kept. */
+/** Admin and QA (bug:delete). A soft delete: gone from lists and counts, history kept. */
 export function DeleteBugDialog({ bug, open, onOpenChange }: DeleteBugDialogProps) {
   const router = useRouter();
   const deleteBug = useDeleteBug(bug);

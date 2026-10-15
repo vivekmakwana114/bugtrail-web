@@ -15,7 +15,7 @@ export const ROLE_DESCRIPTIONS: Record<RoleKey, string> = {
   project_manager: 'Runs projects and their members, triages and assigns bugs.',
   developer: 'Works on assigned bugs: Reported → Ongoing → Resolved.',
   ui_ux: 'Works on assigned design and UI bugs: Reported → Ongoing → Resolved.',
-  qa: 'Reports bugs and verifies fixes (Pass / Failed).',
+  qa: 'Reports bugs and verifies fixes (Pass / Failed). Sets up projects and their members.',
 };
 
 export function roleLabel(role: RoleKey | null): string {

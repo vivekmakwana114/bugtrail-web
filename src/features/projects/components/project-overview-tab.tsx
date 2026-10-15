@@ -164,7 +164,7 @@ function BugsCard({ project }: { project: ProjectDetail }) {
 }
 
 /**
- * Who's on the project. With project:manage_members (PM, Admin): add people, and remove anyone
+ * Who's on the project. With project:manage_members (Admin, PM, QA): add people, and remove anyone
  * but the manager (change the manager first). The API also refuses to remove someone with open
  * bugs assigned here; that reason shows in the confirm dialog as-is. A long list scrolls inside
  * the card, so the card keeps the About card's height.

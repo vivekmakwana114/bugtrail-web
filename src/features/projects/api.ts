@@ -1,5 +1,5 @@
 import { api } from '@/lib/api-client';
-import type { Page, ProjectDetail, ProjectPage, ProjectStatus, UserSummary } from '@/types/api';
+import type { ProjectDetail, ProjectPage, ProjectStatus, UserSummary } from '@/types/api';
 
 export type ProjectListParams = {
   status?: ProjectStatus;
@@ -49,14 +49,12 @@ export async function updateProject(
 
 /**
  * Everyone who can join a project: active users with a role (the API refuses pending,
- * suspended and rejected accounts). Only people with project:manage_members (PM, Admin) open
- * the picker, and both can read the user list. One page of 100 is plenty for one team.
+ * suspended and rejected accounts). From GET /users/project-candidates, which needs
+ * project:manage_members (Admin, PM, QA) rather than user:read, so QA can use the picker too.
  */
 export async function getMemberCandidates(): Promise<UserSummary[]> {
-  const { data } = await api.get<Page<UserSummary>>('/users', {
-    params: { status: 'active', sortBy: 'name:asc', limit: 100 },
-  });
-  return data.results.filter((user) => user.role !== null);
+  const { data } = await api.get<{ users: UserSummary[] }>('/users/project-candidates');
+  return data.users;
 }
 
 /** Adds people (already-members are fine: the API skips them). Returns the new member list. */
@@ -85,13 +83,10 @@ export async function removeProjectMember(
 }
 
 /**
- * Everyone who could manage a project: active Admins and Project Managers (the roles with
- * project:manage_members, which the API requires of a manager). Only people who can edit a
- * project (PM, Admin) open this, and both can read the user list. One page is plenty for a team.
+ * Everyone who could manage a project: active Admins and Project Managers (the only roles the
+ * API accepts as a manager). Same list as the member picker, narrowed to those two roles.
  */
 export async function getManagerCandidates(): Promise<UserSummary[]> {
-  const { data } = await api.get<Page<UserSummary>>('/users', {
-    params: { status: 'active', sortBy: 'name:asc', limit: 100 },
-  });
-  return data.results.filter((user) => user.role === 'admin' || user.role === 'project_manager');
+  const users = await getMemberCandidates();
+  return users.filter((user) => user.role === 'admin' || user.role === 'project_manager');
 }
