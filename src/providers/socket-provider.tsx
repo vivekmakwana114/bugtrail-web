@@ -46,7 +46,10 @@ export function SocketProvider({ children }: { children: ReactNode }) {
 
     const s = io(SOCKET_URL, {
       auth: (send) => send({ token: accessTokenStore.get() }),
-      transports: ['websocket'],
+      // WebSocket first. Some proxies, antivirus and company networks block the upgrade, so fall
+      // back to HTTP long-polling instead of silently never connecting.
+      transports: ['websocket', 'polling'],
+      tryAllTransports: true,
     });
     // A refused handshake or a server-side kick isn't retried by Socket.IO on its own. Try once
     // with a fresh token; if the session itself is over, the next API call signs the user out.
@@ -67,6 +70,7 @@ export function SocketProvider({ children }: { children: ReactNode }) {
       if (reason === 'io server disconnect') renewAndReconnect();
     });
     s.on('connect_error', (error) => {
+      if (process.env.NODE_ENV !== 'production') console.warn('[socket]', error.message);
       // "Unauthorized" = the token expired (30 min) while we were disconnected.
       if (error.message === 'Unauthorized') renewAndReconnect();
     });
