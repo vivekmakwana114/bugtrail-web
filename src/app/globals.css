@@ -3,7 +3,8 @@
 /*
  * BugTrail design tokens: the only place colours, type sizes, radii and shadows are defined.
  * Rules and examples: docs/design/DESIGN_SYSTEM.md. Approved style tile (2026-10-12):
- * "a calm instrument for triage". Stone neutrals; colour only for the five statuses and danger.
+ * "a calm instrument for triage". Cool neutrals in light, stone in dark; colour only for the five
+ * statuses and danger.
  *
  *   1. Tokens       :root (light) and [data-theme='dark']
  *   2. Theme        @theme maps Tailwind utilities to the tokens and switches off the stock palette
@@ -15,15 +16,16 @@
 
 /* ---------------------------------------------------------------- 1. tokens */
 :root {
-  /* neutrals: stone, a hair warm */
-  --bt-bg: #efeeea; /* page ground */
-  --bt-surface: #f9f9f6; /* panels, rows, inputs */
-  --bt-sunken: #e6e5e0; /* wells, avatars, the card's chart box */
-  --bt-line: #d9d7d0; /* hairlines */
-  --bt-line-strong: #bfbcb3; /* input borders, hover outlines */
-  --bt-ink: #1d1e1c; /* text, primary action */
-  --bt-ink-2: #55564f; /* secondary text */
-  --bt-ink-3: #85857c; /* meta, captions, placeholders */
+  /* neutrals: cool and crisp (2026-10-15): white panels on a cool grey page, slate ink.
+     Dark keeps the stone neutrals. */
+  --bt-bg: #f4f5f7; /* page ground */
+  --bt-surface: #ffffff; /* panels, rows, inputs */
+  --bt-sunken: #eceef1; /* wells, avatars, the card's chart box */
+  --bt-line: #e1e4e8; /* hairlines */
+  --bt-line-strong: #c9ced5; /* input borders, hover outlines */
+  --bt-ink: #111827; /* text, primary action */
+  --bt-ink-2: #4b5563; /* secondary text */
+  --bt-ink-3: #6b7280; /* meta, captions, placeholders (4.4:1 on the page) */
 
   /* status: always paired with a glyph (src/components/shared/status-glyph.tsx) */
   --bt-reported: #3a5fc4;
@@ -33,7 +35,7 @@
   --bt-failed: #bd3f27;
   --bt-danger: var(--bt-failed);
 
-  --bt-shadow-pop: 0 6px 24px -8px rgb(29 30 28 / 0.28);
+  --bt-shadow-pop: 0 6px 24px -8px rgb(17 24 39 / 0.22);
   color-scheme: light;
 }
 
