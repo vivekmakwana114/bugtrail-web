@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useEffectEvent } from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -22,8 +22,8 @@ type BugUpdatedEvent = {
 
 /**
  * Live updates while a bug page is open: join the bug's room, and turn its events into cache
- * updates. Rejoins after every reconnect (rooms don't survive a dropped connection) and then
- * refetches, so nothing that happened while offline is missed.
+ * updates. Rejoins after every reconnect (rooms don't survive a dropped connection) or after the
+ * hidden page is shown again, and then refetches, so nothing that happened meanwhile is missed.
  */
 export function useBugRoom(bug: BugDetail) {
   const { socket } = useSocket();
@@ -70,13 +70,21 @@ export function useBugRoom(bug: BugDetail) {
     queryClient.invalidateQueries({ queryKey: chatKeys.messages(bug.id) });
   });
 
+  // A ref, not a variable inside the effect: with cacheComponents, Next keeps a page you leave
+  // alive but hidden (React <Activity>), which runs the effect's cleanup and re-runs it when you
+  // come back. Anything sent while hidden was missed, so joining the same bug again must refetch.
+  const lastJoinedBugId = useRef<string | null>(null);
+
   useEffect(() => {
     if (!socket) return;
-    let joinedBefore = false;
     const join = () => {
-      socket.emit('bug:join', bug.id, (ack: { ok: boolean }) => {
-        if (ack.ok && joinedBefore) onRejoined();
-        joinedBefore ||= ack.ok;
+      socket.emit('bug:join', bug.id, (ack: { ok: boolean; message?: string }) => {
+        if (!ack.ok) {
+          console.warn(`[socket] could not join bug ${bug.id}: ${ack.message}`);
+          return;
+        }
+        if (lastJoinedBugId.current === bug.id) onRejoined();
+        lastJoinedBugId.current = bug.id;
       });
     };
     // Effect events are only called from here, never handed to the socket directly.
