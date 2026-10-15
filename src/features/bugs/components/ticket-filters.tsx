@@ -10,6 +10,7 @@ import { Select, type SelectOption } from '@/components/ui/select';
 import { StatusGlyph } from '@/components/shared/status-glyph';
 import { BUG_STATUSES, STATUS_META } from '@/config/statuses';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/providers/auth-provider';
 import type { BugStatus, UserSummary } from '@/types/api';
 import { useAssignableUsers } from '../hooks';
 import type { BugListFilters } from '../types';
@@ -49,10 +50,15 @@ export function TicketFilters({
 
   // Everyone bugs can be assigned to (anyone can be, since assigning adds them to the project),
   // plus the project's own members so someone since suspended can still be filtered by.
+  // Admins only ever assign bugs to themselves, so another admin is never an option here
+  // (the assignable list already leaves them out; members can still include one).
+  const { user } = useAuth();
   const assignable = useAssignableUsers();
   const people = [
     ...new Map([...(assignable.data ?? []), ...members].map((u) => [u.id, u])).values(),
-  ].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+  ]
+    .filter((person) => person.role !== 'admin' || person.id === user?.id)
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
   const assigneeOptions: SelectOption[] = [
     { value: ANY, label: 'Anyone' },
     { value: 'me', label: 'Assigned to me' },

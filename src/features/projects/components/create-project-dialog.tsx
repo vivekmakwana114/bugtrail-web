@@ -19,7 +19,7 @@ type CreateProjectDialogProps = {
 };
 
 /**
- * New project (Admin: project:create). The key prefixes every bug (CHK-142) and can never change,
+ * New project (Admin, QA: project:create). The key prefixes every bug (CHK-142) and can never change,
  * so it's suggested from the name but always editable, and the hint says why it matters.
  */
 export function CreateProjectDialog({ open, onOpenChange }: CreateProjectDialogProps) {
